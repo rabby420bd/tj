@@ -492,21 +492,21 @@
       getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged
     } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-    // --- Firebase Config ---
-    // Canvas will inject this. Use a fallback for local testing.
-    const firebaseConfig = typeof __firebase_config !== 'undefined'
-      ? JSON.parse(__firebase_config)
-      : {
-        apiKey: "YOUR_FALLBACK_API_KEY",
-        authDomain: "YOUR_FALLBACK_AUTH_DOMAIN",
-        projectId: "YOUR_FALLBACK_PROJECT_ID",
-        storageBucket: "YOUR_FALLBACK_STORAGE_BUCKET",
-        messagingSenderId: "YOUR_FALLBACK_MESSAGING_SENDER_ID",
-        appId: "YOUR_FALLBACK_APP_ID"
-      };
+// --- Firebase Config ---
+// Canvas will inject this. Use a fallback for local testing.
+const firebaseConfig = { // <--- এখানে আর কোনো কন্ডিশনাল চেক নেই, সরাসরি আপনার কনফিগ
+  apiKey: "AIzaSyBPM0unGvJC14lG85nmGmLC1X58521-o-s",
+  authDomain: "trendy-jamakapor.firebaseapp.com",
+  projectId: "trendy-jamakapor",
+  storageBucket: "trendy-jamakapor.firebasestorage.app",
+  messagingSenderId: "154302367160",
+  appId: "1:154302367160:web:48c625d17bfa5d54f6bb4d",
+  measurementId: "G-0P9ZYZ96RB"
+};
+// Canvas will inject this.
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id'; // <--- এই লাইনটি অপরিবর্তিত থাকবে
+// ...
 
-    // Canvas will inject this.
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
     // --- Firebase Initialization ---
     let app, db, auth;
@@ -1769,6 +1769,7 @@
 </body>
 
 </html>
+
 
 
 
