@@ -1,0 +1,1775 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-gray-50">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trendy Jamakapor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@0.395.0/dist/umd/lucide.min.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Simple page transition */
+    .page {
+      display: none;
+    }
+
+    .page.active {
+      display: block;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Product image gallery basic styles */
+    .gallery-main-image {
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+    }
+
+    .gallery-thumbnail {
+      aspect-ratio: 1 / 1;
+      object-fit: cover;
+      cursor: pointer;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+
+    .gallery-thumbnail.active,
+    .gallery-thumbnail:hover {
+      opacity: 1;
+      border-color: #3b82f6;
+    }
+
+    /* --- NEW: Order Tracking Stepper --- */
+    .track-stepper {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      margin: 2rem 0;
+    }
+    .track-stepper::before {
+      content: '';
+      position: absolute;
+      top: 1.25rem;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background-color: #e5e7eb; /* gray-200 */
+      z-index: 1;
+    }
+    .track-stepper-line {
+      position: absolute;
+      top: 1.25rem;
+      left: 0;
+      height: 4px;
+      background-color: #3b82f6; /* blue-500 */
+      z-index: 2;
+      transition: width 0.5s ease;
+    }
+    .track-step {
+      position: relative;
+      z-index: 3;
+      text-align: center;
+      width: 100px;
+    }
+    .track-step-icon {
+      width: 3rem;
+      height: 3rem;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto;
+      border: 4px solid #e5e7eb; /* gray-200 */
+      background-color: #f9fafb; /* gray-50 */
+      transition: all 0.5s ease;
+    }
+    .track-step-icon i {
+      width: 1.25rem;
+      height: 1.25rem;
+      color: #9ca3af; /* gray-400 */
+    }
+    .track-step-label {
+      font-size: 0.75rem;
+      font-medium;
+      color: #6b7280; /* gray-500 */
+      margin-top: 0.5rem;
+      white-space: nowrap;
+    }
+    
+    /* Active step styles */
+    .track-step.active .track-step-icon {
+      border-color: #3b82f6; /* blue-500 */
+      background-color: #dbeafe; /* blue-100 */
+    }
+    .track-step.active .track-step-icon i {
+      color: #3b82f6; /* blue-500 */
+    }
+    .track-step.active .track-step-label {
+      color: #111827; /* gray-900 */
+      font-weight: 600;
+    }
+    
+    /* Completed step styles */
+    .track-step.completed .track-step-icon {
+      border-color: #16a34a; /* green-600 */
+      background-color: #dcfce7; /* green-100 */
+    }
+     .track-step.completed .track-step-icon i {
+       color: #16a34a; /* green-600 */
+    }
+    .track-step.completed .track-step-label {
+      color: #111827; /* gray-900 */
+    }
+    /* --- End Order Tracking Stepper --- */
+  </style>
+</head>
+
+<body class="flex flex-col min-h-screen bg-gray-100">
+
+  <!-- Header -->
+  <header class="bg-white shadow-md sticky top-0 z-50">
+    <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex-shrink-0 flex items-center">
+          <a href="#" id="nav-home" class="text-2xl font-bold text-gray-900">Trendy Jamakapor</a>
+        </div>
+        <div class="flex items-center space-x-4">
+          <a href="#" id="nav-cart" class="relative text-gray-600 hover:text-gray-900 p-2 rounded-full hover:bg-gray-100">
+            <i data-lucide="shopping-cart"></i>
+            <span id="cart-count"
+              class="absolute top-0 right-0 block h-5 w-5 rounded-full bg-red-500 text-white text-xs font-medium flex items-center justify-center"
+              style="display: none;">0</span>
+          </a>
+          <!-- NEW: Track Order Link -->
+          <a href="#" id="nav-track-order" class="text-sm font-medium text-gray-600 hover:text-gray-900">Track Order</a>
+          <a href="#" id="nav-admin" class="text-sm font-medium text-gray-600 hover:text-gray-900">Admin</a>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-grow">
+
+    <!-- Home Page (Product Listing) -->
+    <section id="home-page" class="page active max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <h1 class="text-3xl font-bold text-gray-900 mb-6">Our Products</h1>
+      <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <!-- Products will be injected here by JS -->
+        <p id="products-loading">Loading products...</p>
+      </div>
+    </section>
+
+    <!-- Product Detail Page -->
+    <section id="product-page" class="page max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <button id="back-to-home" class="mb-4 text-blue-600 hover:underline flex items-center">
+        <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Back
+      </button>
+      <div id="product-detail-content" class="bg-white p-6 rounded-lg shadow-lg">
+        <!-- Product detail will be injected here -->
+      </div>
+    </section>
+
+    <!-- Cart Page -->
+    <section id="cart-page" class="page max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <h1 class="text-3xl font-bold text-gray-900 mb-6">Your Cart</h1>
+      <div id="cart-items" class="bg-white p-6 rounded-lg shadow-lg">
+        <!-- Cart items will be injected here -->
+      </div>
+      <div id="cart-summary" class="mt-6 bg-white p-6 rounded-lg shadow-lg">
+        <!-- Cart summary will be injected here -->
+      </div>
+    </section>
+
+    <!-- Checkout Page -->
+    <section id="checkout-page" class="page max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <h1 class="text-3xl font-bold text-gray-900 mb-6">Checkout</h1>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <!-- Order Form -->
+        <div class="bg-white p-6 rounded-lg shadow-lg">
+          <h2 class="text-xl font-semibold mb-4">Shipping Information</h2>
+          <form id="checkout-form" class="space-y-4">
+            <div>
+              <label for="customer-name" class="block text-sm font-medium text-gray-700">Full Name</label>
+              <input type="text" id="customer-name" required
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+              <label for="customer-phone" class="block text-sm font-medium text-gray-700">Phone Number</label>
+              <input type="tel" id="customer-phone" required
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+              <label for="customer-address" class="block text-sm font-medium text-gray-700">Full Address</label>
+              <textarea id="customer-address" rows="3" required
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
+            </div>
+            <!-- UPDATED: Delivery Location -->
+            <div>
+              <label for="delivery-location" class="block text-sm font-medium text-gray-700">Delivery Location</label>
+              <select id="delivery-location" required
+                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white">
+                <option value="" disabled selected>Select delivery location</option>
+                <option value="inside_dhaka">Inside Dhaka (110 BDT)</option>
+                <option value="outside_dhaka">Outside Dhaka (130 BDT)</option>
+              </select>
+            </div>
+            <!-- UPDATED: Payment Instructions for COD + bKash -->
+            <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
+              <h3 class="text-lg font-semibold text-gray-800">Payment Instructions</h3>
+              <p class="text-sm text-gray-700 mt-2">
+                Please send <strong class="text-base text-blue-600">ONLY the delivery charge</strong> (110 or 130 BDT) to our bKash number:
+                <strong class="text-base text-blue-600">01401603157</strong> (Send Money)
+              </p>
+              <p class="text-sm text-gray-700 mt-2">
+                The product price is Cash on Delivery (COD). You will pay for the products when you receive them.
+              </p>
+              <div class="mt-4">
+                <label for="bkash-trx-id" class="block text-sm font-medium text-gray-700">Delivery Charge bKash Transaction ID (TrxID)</label>
+                <input type="text" id="bkash-trx-id" required
+                  class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+              </div>
+            </div>
+            <button type="submit"
+              class="w-full bg-blue-600 text-white py-3 px-4 rounded-md font-semibold hover:bg-blue-700 transition duration-200">
+              Place Order
+            </button>
+          </form>
+        </div>
+        <!-- Order Summary -->
+        <div class="bg-white p-6 rounded-lg shadow-lg h-fit">
+          <h2 class="text-xl font-semibold mb-4">Order Summary</h2>
+          <div id="checkout-summary-items" class="space-y-4">
+            <!-- Checkout summary items -->
+          </div>
+          <!-- UPDATED: Summary with Delivery and COD/bKash Split -->
+          <div class="border-t border-gray-200 mt-4 pt-4 space-y-2">
+            <div class="flex justify-between text-base font-medium text-gray-700">
+              <span>Subtotal (Products)</span>
+              <span id="checkout-subtotal-price">BDT 0.00</span>
+            </div>
+            <div class="flex justify-between text-base font-medium text-gray-700">
+              <span>Delivery Charge</span>
+              <span id="checkout-delivery-charge">BDT 0.00</span>
+            </div>
+            <div class="flex justify-between text-lg font-semibold text-gray-900">
+              <span>Total Value</span>
+              <span id="checkout-total-price">BDT 0.00</span>
+            </div>
+            
+            <!-- NEW: Payment Split -->
+            <div class="border-t border-dashed border-gray-300 mt-4 pt-4 space-y-2">
+              <div class="flex justify-between text-base font-semibold text-blue-600">
+                <span>Pay Now (bKash)</span>
+                <span id="checkout-bKash-amount">BDT 0.00</span>
+              </div>
+              <div class="flex justify-between text-base font-semibold text-gray-800">
+                <span>Pay on Delivery (COD)</span>
+                <span id="checkout-cod-amount">BDT 0.00</span>
+              </div>
+            </div>
+            <!-- End Payment Split -->
+            
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Order Confirmation Page -->
+    <section id="order-confirmation-page" class="page max-w-2xl mx-auto py-16 px-4 text-center">
+      <div class="bg-white p-8 rounded-lg shadow-lg">
+        <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100">
+          <i data-lucide="check" class="h-10 w-10 text-green-600"></i>
+        </div>
+        <h1 class="text-3xl font-bold text-gray-900 mt-6">Thank you for your order!</h1>
+        <p class="text-lg text-gray-700 mt-4">
+          Your order has been placed successfully. We will review your <strong>bKash payment (for delivery)</strong> and contact you shortly.
+        </p>
+        <!-- NEW: Show COD amount on confirmation -->
+        <p class="text-md text-gray-800 mt-4 bg-gray-50 p-4 rounded-md">
+          Please have the product amount (<strong id="confirm-cod-amount">BDT 0.00</strong>) ready as
+          <strong>Cash on Delivery</strong> when your order arrives.
+        </p>
+        <p class="text-gray-600 mt-2">Your Order ID is: <strong id="confirm-order-id" class="text-blue-600 text-lg"></strong></p>
+        <button id="back-to-home-confirm"
+          class="mt-8 bg-blue-600 text-white py-2 px-6 rounded-md font-semibold hover:bg-blue-700 transition duration-200">
+          Continue Shopping
+        </button>
+      </div>
+    </section>
+
+    <!-- NEW: Order Tracking Page -->
+    <section id="track-order-page" class="page max-w-2xl mx-auto py-16 px-4">
+      <h1 class="text-3xl font-bold text-gray-900 mb-6 text-center">Track Your Order</h1>
+      <div class="bg-white p-8 rounded-lg shadow-lg">
+        <!-- UPDATED: Track by Phone or Order ID -->
+        <form id="track-order-form" class="space-y-4">
+          <p class="text-sm text-gray-600">Enter your Phone Number or Order ID (e.g., TJ01401123) to track your order status.</p>
+          <div>
+            <label for="track-input" class="block text-sm font-medium text-gray-700">Phone Number or Order ID</label>
+            <input type="text" id="track-input" required
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              placeholder="e.g., 01... or TJ...">
+          </div>
+          <button type="submit" id="track-order-button"
+            class="w-full bg-blue-600 text-white py-2 px-4 rounded-md font-semibold hover:bg-blue-700 transition duration-200 flex items-center justify-center">
+            <i data-lucide="search" class="w-5 h-5 mr-2"></i>
+            Track Order
+          </button>
+        </form>
+        
+        <!-- Tracking Results -->
+        <div id="track-order-results" class="mt-8">
+          <!-- Results will be injected here -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Admin Login Page -->
+    <section id="admin-login-page" class="page max-w-md mx-auto py-16 px-4">
+      <div class="bg-white p-8 rounded-lg shadow-lg">
+        <h1 class="text-2xl font-bold text-center text-gray-900 mb-6">Admin Login</h1>
+        <form id="admin-login-form" class="space-y-4">
+          <div>
+            <label for="admin-password" class="block text-sm font-medium text-gray-700">Password</label>
+            <input type="password" id="admin-password"
+              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+          </div>
+          <p id="admin-login-error" class="text-sm text-red-500" style="display: none;">Invalid password.</p>
+          <p class="text-xs text-gray-500">Demo password: <strong>admin123</strong></p>
+          <button type="submit"
+            class="w-full bg-gray-800 text-white py-2 px-4 rounded-md font-semibold hover:bg-gray-900 transition duration-200">
+            Login
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Admin Panel Page -->
+    <section id="admin-panel-page" class="page max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-900">Admin Panel</h1>
+        <button id="admin-logout"
+          class="text-sm font-medium text-red-600 hover:underline">Logout</button>
+      </div>
+
+      <!-- Admin Tabs -->
+      <div class="mb-6 border-b border-gray-200">
+        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+          <button id="tab-orders"
+            class="admin-tab border-blue-500 text-blue-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+            View Orders
+          </button>
+          <button id="tab-products"
+            class="admin-tab border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+            Manage Products
+          </button>
+        </nav>
+      </div>
+
+      <!-- Admin Content -->
+      <div>
+        <!-- Orders Tab Content -->
+        <div id="admin-orders-content" class="admin-tab-content">
+          <h2 class="text-2xl font-semibold text-gray-800 mb-4">New Orders</h2>
+          <div id="orders-list" class="space-y-6">
+            <!-- Orders will be injected here -->
+            <p>Loading orders...</p>
+          </div>
+        </div>
+
+        <!-- Products Tab Content -->
+        <div id="admin-products-content" class="admin-tab-content" style="display: none;">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Add/Edit Product Form -->
+            <div class="lg:col-span-1 bg-white p-6 rounded-lg shadow-lg h-fit">
+              <h2 id="product-form-title" class="text-2xl font-semibold text-gray-800 mb-4">Add New Product</h2>
+              <form id="product-form" class="space-y-4">
+                <input type="hidden" id="product-id">
+                <div>
+                  <label for="product-name" class="block text-sm font-medium text-gray-700">Product Name</label>
+                  <input type="text" id="product-name" required
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                  <label for="product-price" class="block text-sm font-medium text-gray-700">Price (BDT)</label>
+                  <input type="number" id="product-price" step="0.01" required
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                <div>
+                  <label for="product-original-price" class="block text-sm font-medium text-gray-700">Original Price (Optional)</label>
+                  <input type="number" id="product-original-price" step="0.01"
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., 1500 (if on sale)">
+                </div>
+                <div>
+                  <label for="product-description" class="block text-sm font-medium text-gray-700">Description /
+                    Specs</label>
+                  <textarea id="product-description" rows="4" required
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
+                </div>
+                <div>
+                  <label for="product-images" class="block text-sm font-medium text-gray-700">Image URLs (comma-separated)</label>
+                  <textarea id="product-images" rows="3" required
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="https://.../img1.jpg, https://.../img2.jpg"></textarea>
+                </div>
+                <div>
+                  <label for="product-sizes" class="block text-sm font-medium text-gray-700">Sizes (comma-separated)</label>
+                  <input type="text" id="product-sizes" required
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="S, M, L, XL">
+                </div>
+                <div>
+                  <label for="product-stock" class="block text-sm font-medium text-gray-700">Stock (JSON format)</label>
+                  <input type="text" id="product-stock" required
+                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    placeholder='{"S": 10, "M": 20, "L": 15, "XL": 5}'>
+                    <p class="text-xs text-gray-500 mt-1">Sizes must match the list above.</p>
+                </div>
+                <div class="flex space-x-2">
+                  <button type="submit"
+                    class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md font-semibold hover:bg-blue-700 transition duration-200">
+                    Save Product
+                  </button>
+                  <button type="button" id="clear-product-form"
+                    class="bg-gray-200 text-gray-700 py-2 px-4 rounded-md font-semibold hover:bg-gray-300 transition duration-200">
+                    Clear
+                  </button>
+                </div>
+              </form>
+            </div>
+            <!-- Product List -->
+            <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-lg">
+              <h2 class="text-2xl font-semibold text-gray-800 mb-4">Existing Products</h2>
+              <div id="admin-product-list" class="space-y-4">
+                <!-- Admin product list will be injected here -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-gray-800 text-white mt-12">
+    <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center">
+      <p>&copy; 2025 Trendy Jamakapor. All rights reserved.</p>
+      <!-- NEW: Track Order Link -->
+      <a href="#" id="footer-track-order" class="text-sm text-gray-300 hover:text-white underline mt-2 inline-block">
+        Track Your Order
+      </a>
+    </div>
+  </footer>
+
+  <!-- Firebase and App Logic -->
+  <script type="module">
+    // --- Firebase SDK Imports ---
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import {
+      getFirestore, doc, getDoc, getDocs, addDoc, setDoc, updateDoc, deleteDoc,
+      collection, query, onSnapshot, serverTimestamp, setLogLevel, where
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import {
+      getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+    // --- Firebase Config ---
+    // Canvas will inject this. Use a fallback for local testing.
+    const firebaseConfig = typeof __firebase_config !== 'undefined'
+      ? JSON.parse(__firebase_config)
+      : {
+        apiKey: "YOUR_FALLBACK_API_KEY",
+        authDomain: "YOUR_FALLBACK_AUTH_DOMAIN",
+        projectId: "YOUR_FALLBACK_PROJECT_ID",
+        storageBucket: "YOUR_FALLBACK_STORAGE_BUCKET",
+        messagingSenderId: "YOUR_FALLBACK_MESSAGING_SENDER_ID",
+        appId: "YOUR_FALLBACK_APP_ID"
+      };
+
+    // Canvas will inject this.
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+    // --- Firebase Initialization ---
+    let app, db, auth;
+    let userId = null;
+    let productsCollection, ordersCollection;
+
+    // --- Firestore Collection Paths ---
+    const productsPath = `/artifacts/${appId}/public/data/products`;
+    const ordersPath = `/artifacts/${appId}/public/data/orders`;
+
+    // --- App State ---
+    let cart = []; // { id, name, price, size, quantity, image }
+    let isAdmin = false;
+    let allProducts = []; // Cache for products
+    let unsubscribeOrders = null;
+    let unsubscribeProducts = null;
+
+    // --- NEW: Global Order Statuses Definition ---
+    const ORDER_STATUSES = ['Pending', 'Confirmed', 'Packed', 'Shipped', 'In Transit', 'Out for Delivery', 'Delivered'];
+
+    // --- DOM Elements ---
+    const pages = document.querySelectorAll('.page');
+    const productGrid = document.getElementById('product-grid');
+    const productsLoading = document.getElementById('products-loading');
+    const productDetailContent = document.getElementById('product-detail-content');
+    const cartCount = document.getElementById('cart-count');
+    const cartItems = document.getElementById('cart-items');
+    const cartSummary = document.getElementById('cart-summary');
+    const checkoutSummaryItems = document.getElementById('checkout-summary-items');
+    const checkoutSubtotalPrice = document.getElementById('checkout-subtotal-price'); // New
+    const checkoutDeliveryCharge = document.getElementById('checkout-delivery-charge'); // New
+    const checkoutTotalPrice = document.getElementById('checkout-total-price');
+    const checkoutBkashAmount = document.getElementById('checkout-bKash-amount'); // New
+    const checkoutCodAmount = document.getElementById('checkout-cod-amount'); // New
+    const checkoutForm = document.getElementById('checkout-form');
+    const deliveryLocationSelect = document.getElementById('delivery-location'); // New
+    const confirmOrderId = document.getElementById('confirm-order-id');
+    const confirmCodAmount = document.getElementById('confirm-cod-amount'); // New
+    const adminLoginForm = document.getElementById('admin-login-form');
+    const adminLoginError = document.getElementById('admin-login-error');
+    let ordersList = document.getElementById('orders-list'); // Changed to let
+    const productForm = document.getElementById('product-form');
+    const productFormTitle = document.getElementById('product-form-title');
+    const adminProductList = document.getElementById('admin-product-list');
+
+    // --- NEW: Track Order Elements ---
+    const trackOrderForm = document.getElementById('track-order-form');
+    const trackOrderResults = document.getElementById('track-order-results');
+    const trackOrderButton = document.getElementById('track-order-button');
+    const navTrackOrder = document.getElementById('nav-track-order');
+    const footerTrackOrder = document.getElementById('footer-track-order');
+
+    // --- Utility Functions ---
+    /**
+     * Shows a specific page by ID and hides others
+     * @param {string} pageId The ID of the page section to show
+     */
+    function showPage(pageId) {
+      // Simple check for admin pages
+      if (pageId.startsWith('admin-panel') && !isAdmin) {
+        showPage('admin-login-page');
+        return;
+      }
+      
+      pages.forEach(page => {
+        page.classList.toggle('active', page.id === pageId);
+      });
+      window.scrollTo(0, 0); // Scroll to top on page change
+    }
+
+    /**
+     * Formats a number as BDT currency
+     * @param {number} amount The amount to format
+     */
+    function formatCurrency(amount) {
+      if (typeof amount !== 'number') {
+        amount = 0;
+      }
+      return `BDT ${amount.toFixed(2)}`;
+    }
+
+    /**
+     * Gets the Tailwind CSS classes for an order status badge
+     * @param {string} status The order status
+     */
+    function getStatusBadgeClass(status) {
+      switch (status) {
+        case 'Pending':
+          return 'bg-yellow-100 text-yellow-800';
+        case 'Confirmed':
+          return 'bg-green-100 text-green-800';
+        case 'Packed':
+          return 'bg-blue-100 text-blue-800';
+        case 'Shipped':
+          return 'bg-indigo-100 text-indigo-800';
+        case 'In Transit':
+          return 'bg-purple-100 text-purple-800';
+        case 'Out for Delivery':
+          return 'bg-orange-100 text-orange-800';
+        case 'Delivered':
+          return 'bg-gray-100 text-gray-800 line-through';
+        default:
+          return 'bg-gray-100 text-gray-800';
+      }
+    }
+
+    // --- Navigation ---
+    document.getElementById('nav-home').addEventListener('click', (e) => { e.preventDefault(); showPage('home-page'); });
+    document.getElementById('nav-cart').addEventListener('click', (e) => { e.preventDefault(); showPage('cart-page'); updateCartView(); });
+    document.getElementById('nav-admin').addEventListener('click', (e) => { e.preventDefault(); showPage(isAdmin ? 'admin-panel-page' : 'admin-login-page'); });
+    document.getElementById('back-to-home').addEventListener('click', (e) => { e.preventDefault(); showPage('home-page'); });
+    document.getElementById('back-to-home-confirm').addEventListener('click', (e) => { e.preventDefault(); showPage('home-page'); });
+    document.getElementById('admin-logout').addEventListener('click', (e) => {
+      e.preventDefault();
+      isAdmin = false;
+      showPage('home-page');
+      if (unsubscribeOrders) unsubscribeOrders();
+    });
+
+    // --- NEW: Track Order Navigation ---
+    navTrackOrder.addEventListener('click', (e) => { e.preventDefault(); showPage('track-order-page'); });
+    footerTrackOrder.addEventListener('click', (e) => { e.preventDefault(); showPage('track-order-page'); });
+
+    // --- NEW: Listen for delivery location changes ---
+    deliveryLocationSelect.addEventListener('change', updateCartView);
+
+    // --- Admin Panel Tab Navigation ---
+    const adminTabs = document.querySelectorAll('.admin-tab');
+    const adminTabContents = document.querySelectorAll('.admin-tab-content');
+    adminTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        // Update tab appearance
+        adminTabs.forEach(t => {
+          t.classList.remove('border-blue-500', 'text-blue-600');
+          t.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+        });
+        tab.classList.add('border-blue-500', 'text-blue-600');
+        tab.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+
+        // Show content
+        const targetContentId = tab.id.replace('tab-', 'admin-') + '-content';
+        adminTabContents.forEach(content => {
+          content.style.display = content.id === targetContentId ? 'block' : 'none';
+        });
+      });
+    });
+
+    // --- Cart Logic ---
+    /**
+     * Loads cart from localStorage
+     */
+    function loadCart() {
+      const storedCart = localStorage.getItem('trendyCart');
+      if (storedCart) {
+        cart = JSON.parse(storedCart);
+      }
+      updateCartBadge();
+    }
+
+    /**
+     * Saves cart to localStorage
+     */
+    function saveCart() {
+      localStorage.setItem('trendyCart', JSON.stringify(cart));
+      updateCartBadge();
+    }
+
+    /**
+     * Updates the cart item count badge
+     */
+    function updateCartBadge() {
+      const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+      if (totalItems > 0) {
+        cartCount.textContent = totalItems;
+        cartCount.style.display = 'flex';
+      } else {
+        cartCount.style.display = 'none';
+      }
+    }
+
+    /**
+     * Adds an item to the cart
+     */
+    function addToCart(product, selectedSize, selectedQuantity) {
+      if (!product || !selectedSize || selectedQuantity <= 0) {
+        alert('Please select a size and quantity.');
+        return;
+      }
+      
+      // Check if item with same ID and size is already in cart
+      const existingItemIndex = cart.findIndex(item => item.id === product.id && item.size === selectedSize);
+      
+      if (existingItemIndex > -1) {
+        cart[existingItemIndex].quantity += selectedQuantity;
+      } else {
+        cart.push({
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          size: selectedSize,
+          quantity: selectedQuantity,
+          image: product.images[0] || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=Image'
+        });
+      }
+      
+      saveCart();
+      showPage('cart-page');
+      updateCartView();
+      console.log('Cart updated:', cart);
+    }
+
+    /**
+     * Updates the Cart page and Checkout summary views
+     */
+    function updateCartView() {
+      if (cart.length === 0) {
+        cartItems.innerHTML = '<p class="text-gray-600">Your cart is empty.</p>';
+        cartSummary.innerHTML = '';
+        checkoutSummaryItems.innerHTML = '<p class="text-gray-500 text-sm">Your cart is empty.</p>';
+        checkoutSubtotalPrice.textContent = formatCurrency(0); // Reset
+        checkoutDeliveryCharge.textContent = formatCurrency(0); // Reset
+        checkoutTotalPrice.textContent = formatCurrency(0);
+        checkoutBkashAmount.textContent = formatCurrency(0); // Reset
+        checkoutCodAmount.textContent = formatCurrency(0); // Reset
+        return;
+      }
+
+      let cartItemsHtml = '';
+      let checkoutItemsHtml = '';
+      let subtotal = 0;
+
+      cart.forEach((item, index) => {
+        const itemTotal = item.price * item.quantity;
+        subtotal += itemTotal;
+
+        // Full cart page view
+        cartItemsHtml += `
+          <div class="flex items-center justify-between py-4 border-b border-gray-200">
+            <div class="flex items-center space-x-4">
+              <img src="${item.image}" alt="${item.name}" class="w-20 h-20 object-cover rounded-md">
+              <div>
+                <h3 class="text-lg font-semibold text-gray-800">${item.name}</h3>
+                <p class="text-sm text-gray-600">Size: ${item.size}</p>
+                <p class="text-sm text-gray-600">${formatCurrency(item.price)}</p>
+              </div>
+            </div>
+            <div class="flex items-center space-x-4">
+              <div class="flex items-center border border-gray-300 rounded-md">
+                <button class="cart-quantity-change p-2" data-index="${index}" data-change="-1" ${item.quantity <= 1 ? 'disabled' : ''}>-</button>
+                <span class="px-4">${item.quantity}</span>
+                <button class="cart-quantity-change p-2" data-index="${index}" data-change="1">+</button>
+              </div>
+              <span class="text-lg font-semibold w-24 text-right">${formatCurrency(itemTotal)}</span>
+              <button class="cart-remove-item text-red-500 hover:text-red-700" data-index="${index}">
+                <i data-lucide="trash-2" class="w-5 h-5"></i>
+              </button>
+            </div>
+          </div>
+        `;
+
+        // Checkout summary view
+        checkoutItemsHtml += `
+          <div class="flex justify-between items-start">
+            <div class="flex space-x-3">
+              <img src="${item.image}" alt="${item.name}" class="w-12 h-12 object-cover rounded-md">
+              <div>
+                <p class="text-sm font-medium text-gray-800">${item.name}</p>
+                <p class="text-xs text-gray-500">Size: ${item.size}</p>
+                <p class="text-xs text-gray-500">Qty: ${item.quantity}</p>
+              </div>
+            </div>
+            <p class="text-sm font-medium text-gray-800">${formatCurrency(itemTotal)}</p>
+          </div>
+        `;
+      });
+
+      cartItems.innerHTML = cartItemsHtml;
+      
+      // Cart Page Summary (Subtotal only)
+      cartSummary.innerHTML = `
+        <div class="flex justify-between text-xl font-bold text-gray-900">
+          <span>Subtotal</span>
+          <span>${formatCurrency(subtotal)}</span>
+        </div>
+        <button id="go-to-checkout" class="w-full mt-6 bg-blue-600 text-white py-3 px-4 rounded-md font-semibold hover:bg-blue-700 transition duration-200">
+          Proceed to Checkout
+        </button>
+      `;
+
+      // --- UPDATED: Checkout Page Summary (with Delivery) ---
+      let deliveryCharge = 0;
+      const location = deliveryLocationSelect.value;
+      if (location === 'inside_dhaka') {
+        deliveryCharge = 110;
+      } else if (location === 'outside_dhaka') {
+        deliveryCharge = 130;
+      }
+      
+      const total = subtotal + deliveryCharge;
+
+      checkoutSummaryItems.innerHTML = checkoutItemsHtml;
+      checkoutSubtotalPrice.textContent = formatCurrency(subtotal);
+      checkoutDeliveryCharge.textContent = formatCurrency(deliveryCharge);
+      checkoutTotalPrice.textContent = formatCurrency(total);
+      // --- NEW: Populate payment split ---
+      checkoutBkashAmount.textContent = formatCurrency(deliveryCharge);
+      checkoutCodAmount.textContent = formatCurrency(subtotal);
+      // --- End of Update ---
+
+      // Add event listeners for cart buttons
+      document.querySelectorAll('.cart-quantity-change').forEach(button => {
+        button.addEventListener('click', (e) => {
+          const index = parseInt(e.currentTarget.dataset.index);
+          const change = parseInt(e.currentTarget.dataset.change);
+          cart[index].quantity += change;
+          if (cart[index].quantity <= 0) {
+            cart[index].quantity = 1;
+          }
+          saveCart();
+          updateCartView();
+        });
+      });
+
+      document.querySelectorAll('.cart-remove-item').forEach(button => {
+        button.addEventListener('click', (e) => {
+          const index = parseInt(e.currentTarget.dataset.index);
+          cart.splice(index, 1);
+          saveCart();
+          updateCartView();
+        });
+      });
+
+      document.getElementById('go-to-checkout').addEventListener('click', () => {
+        showPage('checkout-page');
+      });
+      
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons(); // Re-render icons
+      }
+    }
+
+    /**
+     * Clears the cart
+     */
+    function clearCart() {
+      cart = [];
+      saveCart();
+      updateCartView();
+    }
+
+
+    // --- Product Rendering ---
+    /**
+     * Fetches and renders all products on the home page
+     */
+    async function renderProducts() {
+      if (!db) {
+        console.error("Firestore DB not initialized for renderProducts");
+        return;
+      }
+      
+      productsLoading.style.display = 'block';
+      productGrid.innerHTML = '';
+      
+      try {
+        // Use onSnapshot to listen for real-time updates
+        if(unsubscribeProducts) unsubscribeProducts(); // Unsubscribe from previous listener
+        
+        unsubscribeProducts = onSnapshot(productsCollection, (snapshot) => {
+          allProducts = []; // Clear local cache
+          if (snapshot.empty) {
+            productGrid.innerHTML = '<p class="text-gray-600 col-span-full">No products found. Please check back later.</p>';
+          } else {
+            let productsHtml = '';
+            snapshot.forEach(doc => {
+              const product = { id: doc.id, ...doc.data() };
+              allProducts.push(product); // Add to cache
+              
+              // Create price HTML
+              let priceHtml = '';
+              if (product.originalPrice && product.originalPrice > product.price) {
+                priceHtml = `
+                  <p class="text-lg font-bold text-red-600 mt-2">
+                    ${formatCurrency(product.price)}
+                    <del class="text-sm font-normal text-gray-500 ml-2">${formatCurrency(product.originalPrice)}</del>
+                  </p>
+                `;
+              } else {
+                priceHtml = `<p class="text-lg font-bold text-blue-600 mt-2">${formatCurrency(product.price)}</p>`;
+              }
+              
+              productsHtml += `
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden transition-shadow duration-300 hover:shadow-xl">
+                  <a href="#" class="product-link" data-id="${product.id}">
+                    <img src="${product.images && product.images.length > 0 ? product.images[0] : 'https://placehold.co/400x400/e2e8f0/94a3b8?text=Image'}" 
+                         alt="${product.name}" 
+                         class="w-full h-56 object-cover"
+                         onerror="this.src='https://placehold.co/400x400/e2e8f0/94a3b8?text=Image+Not+Found'">
+                  </a>
+                  <div class="p-4">
+                    <h3 class="text-lg font-semibold text-gray-800 truncate">
+                      <a href="#" class="product-link" data-id="${product.id}">${product.name}</a>
+                    </h3>
+                    ${priceHtml}
+                    <button class="product-link w-full mt-4 bg-gray-800 text-white py-2 px-4 rounded-md font-semibold hover:bg-gray-900 transition duration-200" data-id="${product.id}">
+                      View Details
+                    </button>
+                  </div>
+                </div>
+              `;
+            });
+            productGrid.innerHTML = productsHtml;
+            
+            // Add event listeners to new product links/buttons
+            document.querySelectorAll('.product-link').forEach(link => {
+              link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const productId = e.currentTarget.dataset.id;
+                renderProductDetail(productId);
+              });
+            });
+          }
+          productsLoading.style.display = 'none';
+          
+          // Also refresh admin product list if admin is logged in
+          if(isAdmin) {
+             renderAdminProductList();
+          }
+        }, (error) => {
+          console.error("Error fetching products: ", error);
+          productGrid.innerHTML = '<p class="text-red-500 col-span-full">Error loading products.</p>';
+          productsLoading.style.display = 'none';
+        });
+        
+      } catch (error) {
+        console.error("Error setting up product listener: ", error);
+        productGrid.innerHTML = '<p class="text-red-500 col-span-full">Error loading products.</p>';
+        productsLoading.style.display = 'none';
+      }
+    }
+
+    /**
+     * Fetches and renders a single product's detail page
+     * @param {string} productId The Firestore document ID of the product
+     */
+    async function renderProductDetail(productId) {
+      if (!db) {
+        console.error("Firestore DB not initialized for renderProductDetail");
+        return;
+      }
+      
+      showPage('product-page');
+      productDetailContent.innerHTML = '<p>Loading product details...</p>';
+      
+      try {
+        const productRef = doc(db, productsPath, productId);
+        const docSnap = await getDoc(productRef);
+
+        if (docSnap.exists()) {
+          const product = { id: docSnap.id, ...docSnap.data() };
+          
+          // Image gallery HTML
+          let imagesHtml = '';
+          let thumbnailsHtml = '';
+          if (product.images && product.images.length > 0) {
+            product.images.forEach((img, index) => {
+              if (index === 0) {
+                imagesHtml = `<img id="main-product-image" src="${img}" alt="${product.name}" class="w-full rounded-lg gallery-main-image">`;
+              }
+              thumbnailsHtml += `
+                <img src="${img}" alt="Thumbnail ${index + 1}" 
+                     class="gallery-thumbnail w-20 h-20 rounded-md border-2 ${index === 0 ? 'active border-blue-500' : 'border-transparent'}"
+                     data-src="${img}">
+              `;
+            });
+          } else {
+            imagesHtml = `<img id="main-product-image" src="https://placehold.co/600x600/e2e8f0/94a3b8?text=Image" alt="${product.name}" class="w-full rounded-lg gallery-main-image">`;
+          }
+
+          // Size options HTML
+          let sizesHtml = '';
+          if (product.sizes && product.sizes.length > 0) {
+            product.sizes.forEach(size => {
+              const stock = product.stock ? (product.stock[size] || 0) : 0;
+              const isDisabled = stock <= 0;
+              sizesHtml += `
+                <div>
+                  <input type="radio" name="product-size" id="size-${size}" value="${size}" class="sr-only" ${isDisabled ? 'disabled' : ''}>
+                  <label for="size-${size}" 
+                    class="flex items-center justify-center px-4 py-2 border rounded-md text-sm font-medium cursor-pointer 
+                           ${isDisabled ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600'}">
+                    ${size} ${isDisabled ? '(Out of Stock)' : ''}
+                  </label>
+                </div>
+              `;
+            });
+          } else {
+            sizesHtml = '<p class="text-sm text-gray-500">No sizes available.</p>';
+          }
+
+          // Create price HTML for detail page
+          let priceHtml = '';
+          if (product.originalPrice && product.originalPrice > product.price) {
+            priceHtml = `
+              <div class="flex items-baseline gap-3 mt-2">
+                <p class="text-3xl font-bold text-red-600">${formatCurrency(product.price)}</p>
+                <del class="text-2xl font-normal text-gray-500">${formatCurrency(product.originalPrice)}</del>
+              </div>
+            `;
+          } else {
+            priceHtml = `<p class="text-3xl font-bold text-blue-600 mt-2">${formatCurrency(product.price)}</p>`;
+          }
+
+          productDetailContent.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <!-- Image Gallery -->
+              <div>
+                ${imagesHtml}
+                <div class="flex space-x-2 mt-4 overflow-x-auto">
+                  ${thumbnailsHtml}
+                </div>
+              </div>
+              
+              <!-- Product Info -->
+              <div>
+                <h2 class="text-3xl font-bold text-gray-900">${product.name}</h2>
+                ${priceHtml}
+                <div class="mt-6">
+                  <h4 class="text-sm font-medium text-gray-700">Select Size</h4>
+                  <fieldset class="mt-2">
+                    <legend class="sr-only">Choose a size</legend>
+                    <div id="product-size-options" class="flex flex-wrap gap-3">
+                      ${sizesHtml}
+                    </div>
+                  </fieldset>
+                </div>
+                
+                <div class="mt-6">
+                  <label for="product-quantity" class="text-sm font-medium text-gray-700">Quantity</label>
+                  <input type="number" id="product-quantity" value="1" min="1" max="10" 
+                         class="mt-1 w-20 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <button id="add-to-cart-btn" class="w-full mt-8 bg-blue-600 text-white py-3 px-4 rounded-md font-semibold hover:bg-blue-700 transition duration-200 flex items-center justify-center space-x-2">
+                  <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                  <span>Add to Cart</span>
+                </button>
+                
+                <div class="mt-8">
+                  <h4 class="text-lg font-medium text-gray-800 mb-2">Specifications</h4>
+                  <p class="text-gray-600 whitespace-pre-wrap">${product.description || 'No description available.'}</p>
+                </div>
+              </div>
+            </div>
+          `;
+          
+          if (typeof lucide !== 'undefined') {
+            lucide.createIcons(); // Render icons
+          }
+
+          // Add event listeners for gallery
+          document.querySelectorAll('.gallery-thumbnail').forEach(thumb => {
+            thumb.addEventListener('click', (e) => {
+              document.getElementById('main-product-image').src = e.currentTarget.dataset.src;
+              // Update active state
+              document.querySelectorAll('.gallery-thumbnail').forEach(t => t.classList.remove('active', 'border-blue-500'));
+              e.currentTarget.classList.add('active', 'border-blue-500');
+            });
+          });
+
+          // Add event listener for 'Add to Cart'
+          document.getElementById('add-to-cart-btn').addEventListener('click', () => {
+            const selectedSizeEl = document.querySelector('input[name="product-size"]:checked');
+            const selectedSize = selectedSizeEl ? selectedSizeEl.value : null;
+            const selectedQuantity = parseInt(document.getElementById('product-quantity').value);
+            
+            if (!selectedSize) {
+              alert('Please select a size.');
+              return;
+            }
+            addToCart(product, selectedSize, selectedQuantity);
+          });
+          
+        } else {
+          console.error("No such product!");
+          productDetailContent.innerHTML = '<p class="text-red-500">Error: Product not found.</p>';
+        }
+      } catch (error) {
+        console.error("Error getting product detail: ", error);
+        productDetailContent.innerHTML = '<p class="text-red-500">Error loading product details.</p>';
+      }
+    }
+
+    // --- Checkout Logic ---
+    checkoutForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      if (cart.length === 0) {
+        alert("Your cart is empty.");
+        return;
+      }
+      
+      // --- NEW: Check for delivery location ---
+      const deliveryLocation = deliveryLocationSelect.value;
+      if (!deliveryLocation) {
+        alert("Please select a delivery location.");
+        return;
+      }
+      // --- End New ---
+
+      // Collect data
+      const customerData = {
+        name: document.getElementById('customer-name').value,
+        phone: document.getElementById('customer-phone').value,
+        address: document.getElementById('customer-address').value,
+        deliveryLocation: deliveryLocationSelect.options[deliveryLocationSelect.selectedIndex].text, // Save text like "Inside Dhaka (110 BDT)"
+        bKashTrxId: document.getElementById('bkash-trx-id').value
+      };
+
+      const orderItems = cart.map(item => ({
+        id: item.id,
+        name: item.name,
+        size: item.size,
+        quantity: item.quantity,
+        price: item.price
+      }));
+      
+      const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      
+      // --- NEW: Get Delivery Info ---
+      let deliveryCharge = 0;
+      if (deliveryLocation === 'inside_dhaka') {
+        deliveryCharge = 110;
+      } else if (deliveryLocation === 'outside_dhaka') {
+        deliveryCharge = 130;
+      }
+      
+      const total = subtotal + deliveryCharge;
+      // --- End New ---
+      
+      const orderData = {
+        customer: customerData,
+        items: orderItems,
+        subtotal: subtotal, // Product cost
+        deliveryCharge: deliveryCharge, // Delivery cost
+        total: total, // Grand total value
+        codAmount: subtotal, // Explicit: Amount to be paid on delivery
+        prepaidAmount: deliveryCharge, // Explicit: Amount paid via bKash
+        status: 'Pending', // Default status
+        createdAt: serverTimestamp(), // Use server timestamp
+        publicOrderId: '' // Will be added in the next step
+      };
+
+      // --- Save order to Firestore ---
+      try {
+        // Step 1: Create the document
+        const docRef = await addDoc(ordersCollection, orderData);
+        console.log("Order placed successfully, ID: ", docRef.id);
+        
+        // --- NEW: Step 2: Create Public ID based on phone + timestamp ---
+        const phonePart = customerData.phone.substring(0, 5); // e.g., "01401"
+        const uniqueSuffix = Date.now().toString().slice(-3); // e.g., "123"
+        const publicOrderId = `TJ${phonePart}${uniqueSuffix}`; // e.g., "TJ01401123"
+        await updateDoc(docRef, { publicOrderId: publicOrderId });
+        console.log("Public Order ID set:", publicOrderId);
+        // --- End New ---
+        
+        // --- !!! BACKEND ACTION NEEDED !!! ---
+        // This is where you would trigger a Firebase Function
+        // to send an email to 'rabby420bd@gmail.com'.
+        // We will simulate it here.
+        sendOrderEmail({ ...orderData, publicOrderId }, docRef.id); // Send full data
+        // --- !!! END BACKEND ACTION !!! ---
+        
+        // Show confirmation page
+        confirmOrderId.textContent = publicOrderId; // <-- SHOW PUBLIC ID
+        confirmCodAmount.textContent = formatCurrency(subtotal); // <-- SHOW COD AMOUNT
+        showPage('order-confirmation-page');
+        
+        // Clear cart and form
+        clearCart();
+        checkoutForm.reset();
+        deliveryLocationSelect.value = ""; // Reset select
+        updateCartView(); // Reset summaries to 0
+
+      } catch (error) {
+        console.error("Error placing order: ", error);
+        alert("There was an error placing your order. Please try again.");
+      }
+    });
+    
+    /**
+     * !!! SIMULATION FUNCTION !!!
+     * In a real app, this logic would be in a Firebase Cloud Function.
+     */
+    function sendOrderEmail(orderData, orderId, isConfirmation = false) {
+        const recipientEmail = "rabby420bd@gmail.com"; // User's email
+        let subject = `New Order Received! ID: ${orderId}`;
+        
+        if (isConfirmation) {
+          subject = `Order Confirmed! ID: ${orderId}`;
+        }
+
+        console.log("--- SIMULATING ORDER EMAIL ---");
+        console.log(`To: ${recipientEmail}`);
+        console.log("From: Trendy Jamakapor <noreply@yourdomain.com>");
+        console.log(`Subject: ${subject}`);
+        console.log("\nOrder Details:\n", JSON.stringify(orderData, null, 2));
+        console.log("--- END SIMULATION ---");
+        
+        // This function would use a service like SendGrid or Mailgun
+        // to send the actual email from a secure backend.
+    }
+
+    // --- Admin Logic ---
+    
+    /**
+     * Admin: Handle Login
+     */
+    adminLoginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const password = document.getElementById('admin-password').value;
+      // !!! INSECURE - FOR DEMO ONLY !!!
+      // A real app must use Firebase Authentication
+      if (password === 'admin123') {
+        isAdmin = true;
+        showPage('admin-panel-page');
+        adminLoginForm.reset();
+        adminLoginError.style.display = 'none';
+        // Start listening to orders and products
+        listenToOrders();
+        renderAdminProductList(); // Render products from cache first
+      } else {
+        isAdmin = false;
+        adminLoginError.style.display = 'block';
+      }
+    });
+
+    /**
+     * Admin: Listen for and render orders
+     */
+    function listenToOrders() {
+      if (!db) {
+         console.error("Firestore DB not initialized for listenToOrders");
+         return;
+      }
+      
+      // --- Use global ORDER_STATUSES ---
+      // const orderStatuses = ['Pending', 'Confirmed', 'Packed', 'Shipped', 'In Transit', 'Out for Delivery', 'Delivered'];
+      
+      const q = query(ordersCollection); // TODO: Add orderBy('createdAt', 'desc') after enabling indexing
+      
+      unsubscribeOrders = onSnapshot(q, (snapshot) => {
+        if (snapshot.empty) {
+          ordersList.innerHTML = '<p class="text-gray-600">No orders found.</p>';
+          return;
+        }
+        
+        let ordersHtml = '';
+        // Note: Firestore's default order is by ID.
+        // For production, you'd add an index to sort by timestamp.
+        // We'll reverse the array client-side for now.
+        const docs = snapshot.docs.reverse(); 
+        
+        docs.forEach(doc => {
+          const order = { id: doc.id, ...doc.data() };
+          
+          const itemsHtml = order.items.map(item => `
+            <li class="flex justify-between text-sm">
+              <span>${item.name} (Size: ${item.size}, Qty: ${item.quantity})</span>
+              <span class="font-medium">${formatCurrency(item.price * item.quantity)}</span>
+            </li>
+          `).join('');
+
+          const orderDate = order.createdAt?.toDate ? order.createdAt.toDate().toLocaleString() : 'Just now';
+          
+          // --- NEW: Create status options ---
+          const statusOptionsHtml = ORDER_STATUSES.map(status => `
+            <option value="${status}" ${order.status === status ? 'selected' : ''}>
+              ${status}
+            </option>
+          `).join('');
+
+          ordersHtml += `
+            <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+              <div class="flex justify-between items-start mb-4">
+                <div>
+                  <!-- UPDATED: Show Public Order ID -->
+                  <h3 class="text-xl font-semibold text-gray-800">
+                    Order ID: <span class="text-blue-600">${order.publicOrderId || order.id}</span>
+                  </h3>
+                  <p class="text-sm text-gray-500">Placed on: ${orderDate}</p>
+                </div>
+                <!-- NEW: Dynamic Status Badge -->
+                <span class="px-3 py-1 rounded-full text-sm font-medium ${getStatusBadgeClass(order.status)}">
+                  ${order.status}
+                </span>
+              </div>
+              
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Customer Details -->
+                <div>
+                  <h4 class="text-lg font-medium text-gray-700 mb-2">Customer Details</h4>
+                  <ul class="space-y-1 text-gray-600">
+                    <li><strong>Name:</strong> ${order.customer.name}</li>
+                    <li><strong>Phone:</strong> ${order.customer.phone}</li>
+                    <li><strong>Address:</strong> ${order.customer.address}</li>
+                    <li><strong>Delivery:</strong> ${order.customer.deliveryLocation || 'N/A'}</li>
+                    <li class="mt-2"><strong>bKash TrxID:</strong> 
+                      <span class="font-semibold text-blue-600">${order.customer.bKashTrxId}</span>
+                    </li>
+                  </ul>
+                </div>
+                
+                <!-- Order Items -->
+                <div>
+                  <h4 class="text-lg font-medium text-gray-700 mb-2">Order Items</h4>
+                  <ul class="space-y-2 mb-4">
+                    ${itemsHtml}
+                  </ul>
+                  <!-- UPDATED: Full cost breakdown -->
+                  <div class="border-t border-gray-200 pt-3 space-y-1">
+                    <div class="flex justify-between text-base font-medium">
+                      <span>Subtotal (COD)</span>
+                      <span>${order.subtotal ? formatCurrency(order.subtotal) : 'N/A'}</span>
+                    </div>
+                    <div class="flex justify-between text-base font-medium">
+                      <span>Delivery (bKash)</span>
+                      <span>${order.deliveryCharge ? formatCurrency(order.deliveryCharge) : 'N/A'}</span>
+                    </div>
+                    <div class="flex justify-between text-lg font-bold">
+                      <span>Total Value</span>
+                      <span>${formatCurrency(order.total)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- NEW: Admin Controls (Dropdown) -->
+              <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
+                <label for="status-${order.id}" class="text-sm font-medium text-gray-700">Update Status:</label>
+                <select id="status-${order.id}" class="order-status-select bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        data-id="${order.id}" ${order.status === 'Delivered' ? 'disabled' : ''}>
+                  ${statusOptionsHtml}
+                </select>
+              </div>
+            </div>
+          `;
+        });
+        ordersList.innerHTML = ordersHtml;
+        
+        // --- NEW: Add event listeners for status dropdowns ---
+        addOrderStatusListeners();
+        
+      }, (error) => {
+        console.error("Error listening to orders: ", error);
+        ordersList.innerHTML = '<p class="text-red-500">Error loading orders.</p>';
+      });
+    }
+
+    /**
+     * --- NEW (FIX): Admin: Updates an order's status in Firestore ---
+     * @param {string} orderId The Firestore document ID of the order
+     * @param {string} newStatus The new status string
+     */
+    async function updateOrderStatus(orderId, newStatus) {
+      if (!db) {
+        console.error("DB not initialized for updateOrderStatus");
+        return;
+      }
+      
+      const orderRef = doc(db, ordersPath, orderId);
+      
+      try {
+        await updateDoc(orderRef, { status: newStatus });
+        console.log(`Order ${orderId} status updated to ${newStatus}`);
+        
+        // --- Send confirmation email ONLY when status is first changed to "Confirmed" ---
+        // We'd need to check the *previous* status to be perfect, but for simplicity,
+        // we'll just send it any time it's set to "Confirmed".
+        if (newStatus === 'Confirmed') {
+          const orderSnap = await getDoc(orderRef);
+          if (orderSnap.exists()) {
+            sendOrderEmail({ id: orderId, ...orderSnap.data() }, orderId, true); // true for isConfirmation
+          }
+        }
+      } catch (error) {
+        console.error(`Error updating order ${orderId}: `, error);
+        alert("There was an error updating the order status.");
+      }
+    }
+
+    /**
+     * --- REFACTORED: Admin: Adds change listeners to the order status dropdowns ---
+     */
+    function addOrderStatusListeners() {
+      // Event delegation pattern. Remove old listener by replacing the node.
+      const oldList = ordersList;
+      if (!oldList || !oldList.parentNode) return; // Safety check if list isn't rendered
+      
+      const newList = oldList.cloneNode(true);
+      oldList.parentNode.replaceChild(newList, oldList);
+      
+      // Re-assign the global 'ordersList' variable to the new node
+      ordersList = document.getElementById('orders-list'); 
+      if (!ordersList) return; // Safety check
+
+      ordersList.addEventListener('change', async (e) => {
+        // Only act on the select dropdowns
+        if (e.target && e.target.classList.contains('order-status-select')) {
+          const currentSelect = e.target;
+          const orderId = currentSelect.dataset.id;
+          const newStatus = currentSelect.value;
+
+          currentSelect.disabled = true; // Disable while updating
+          
+          await updateOrderStatus(orderId, newStatus);
+          
+          // No need to re-enable here. The onSnapshot listener
+          // will rebuild the entire list, and this listener
+          // is on the parent, so it will automatically apply to
+          // the new select elements after the next `addOrderStatusListeners` call.
+        }
+      });
+    }
+
+    /**
+     * Admin: Render the list of products in the admin panel
+     */
+    function renderAdminProductList() {
+      if (allProducts.length === 0) {
+        adminProductList.innerHTML = '<p class="text-gray-600">No products created yet.</p>';
+        return;
+      }
+      
+      let productsHtml = '';
+      allProducts.forEach(product => {
+        productsHtml += `
+          <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+            <div class="flex items-center space-x-4">
+              <img src="${product.images && product.images.length > 0 ? product.images[0] : 'https://placehold.co/60x60/e2e8f0/94a3b8?text=Img'}" 
+                   alt="${product.name}" class="w-16 h-16 object-cover rounded-md">
+              <div>
+                <h4 class="text-base font-semibold text-gray-800">${product.name}</h4>
+                <p class="text-sm text-gray-600">${formatCurrency(product.price)}</p>
+              </div>
+            </div>
+            <div class="flex space-x-2">
+              <button class="admin-edit-product p-2 text-blue-600 hover:text-blue-800" data-id="${product.id}">
+                <i data-lucide="edit-2" class="w-5 h-5"></i>
+              </button>
+              <button class="admin-delete-product p-2 text-red-500 hover:text-red-700" data-id="${product.id}">
+                <i data-lucide="trash-2" class="w-5 h-5"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      });
+      adminProductList.innerHTML = productsHtml;
+      
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons(); // Render icons
+      }
+      
+      // Add event listeners for edit/delete
+      document.querySelectorAll('.admin-edit-product').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const id = e.currentTarget.dataset.id;
+          const product = allProducts.find(p => p.id === id);
+          if (product) {
+            populateProductForm(product);
+          }
+        });
+      });
+      
+      document.querySelectorAll('.admin-delete-product').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const id = e.currentTarget.dataset.id;
+          const product = allProducts.find(p => p.id === id);
+          // NOTE: Replaced confirm() with a simple true
+          const shouldDelete = true; // Was: confirm(`Are you sure you want to delete "${product.name}"?`);
+          if (shouldDelete) {
+            try {
+              await deleteDoc(doc(db, productsPath, id));
+              console.log("Product deleted successfully");
+              // The onSnapshot listener will automatically refresh the list
+            } catch (error) {
+              console.error("Error deleting product: ", error);
+              alert("Error deleting product.");
+            }
+          }
+        });
+      });
+    }
+
+    /**
+     * Admin: Populate the product form for editing
+     */
+    function populateProductForm(product) {
+      productFormTitle.textContent = 'Edit Product';
+      document.getElementById('product-id').value = product.id;
+      document.getElementById('product-name').value = product.name;
+      document.getElementById('product-price').value = product.price;
+      document.getElementById('product-original-price').value = product.originalPrice || '';
+      document.getElementById('product-description').value = product.description;
+      document.getElementById('product-images').value = product.images ? product.images.join(', ') : '';
+      document.getElementById('product-sizes').value = product.sizes ? product.sizes.join(', ') : '';
+      document.getElementById('product-stock').value = product.stock ? JSON.stringify(product.stock) : '{}';
+      window.scrollTo(0, 0); // Scroll to form
+    }
+
+    /**
+     * Admin: Clear the product form
+     */
+    function clearProductForm() {
+      productFormTitle.textContent = 'Add New Product';
+      productForm.reset();
+      document.getElementById('product-id').value = '';
+    }
+    document.getElementById('clear-product-form').addEventListener('click', clearProductForm);
+
+    /**
+     * Admin: Handle product form submission (Add/Update)
+     */
+    productForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      let stockData = {};
+      try {
+        stockData = JSON.parse(document.getElementById('product-stock').value);
+      } catch (error) {
+        alert("Invalid JSON format for Stock. Please correct it.");
+        console.error("Stock JSON parse error: ", error);
+        return;
+      }
+      
+      const originalPriceValue = document.getElementById('product-original-price').value;
+      
+      const productData = {
+        name: document.getElementById('product-name').value,
+        price: parseFloat(document.getElementById('product-price').value),
+        originalPrice: originalPriceValue ? parseFloat(originalPriceValue) : null,
+        description: document.getElementById('product-description').value,
+        images: document.getElementById('product-images').value.split(',').map(url => url.trim()).filter(url => url),
+        sizes: document.getElementById('product-sizes').value.split(',').map(s => s.trim().toUpperCase()).filter(s => s),
+        stock: stockData
+      };
+      
+      try {
+        const productId = document.getElementById('product-id').value;
+        if (productId) {
+          // Update existing product
+          const productRef = doc(db, productsPath, productId);
+          await updateDoc(productRef, productData);
+          console.log("Product updated successfully");
+        } else {
+          // Add new product
+          await addDoc(productsCollection, productData);
+          console.log("Product added successfully");
+        }
+        clearProductForm();
+        // The onSnapshot listener will automatically refresh the list
+      } catch (error) {
+        console.error("Error saving product: ", error);
+        alert("Error saving product. Check console for details.");
+      }
+    });
+
+    // --- App Initialization ---
+    async function initApp() {
+      try {
+        // Init Firebase
+        app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+        setLogLevel('debug'); // Enable Firestore logging
+
+        // Authenticate user
+        const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        if (token) {
+          await signInWithCustomToken(auth, token);
+        } else {
+          await signInAnonymously(auth);
+        }
+
+        onAuthStateChanged(auth, (user) => {
+          if (user) {
+            console.log("Firebase Auth state changed, User ID:", user.uid);
+            userId = user.uid;
+            
+            // --- Define collections *after* auth is ready ---
+            productsCollection = collection(db, productsPath);
+            ordersCollection = collection(db, ordersPath);
+
+            // Load initial data
+            renderProducts(); // This now sets up a snapshot listener
+            loadCart();
+          } else {
+            console.log("User is signed out.");
+            userId = null;
+          }
+        });
+
+      } catch (error) {
+        console.error("Error initializing Firebase:", error);
+        document.body.innerHTML = `<div class="p-8 text-red-600">Error initializing application. Please check console.</div>`;
+      }
+      
+      if (typeof lucide !== 'undefined') {
+        lucide.createIcons(); // Initial icon render
+      }
+    }
+
+    // --- NEW: Order Tracking Logic ---
+    
+    // Define the steps for the tracking UI
+    const trackingSteps = [
+      { status: 'Pending', icon: 'clock' },
+      { status: 'Confirmed', icon: 'check-circle' },
+      { status: 'Packed', icon: 'package' },
+      { status: 'Shipped', icon: 'truck' },
+      { status: 'In Transit', icon: 'route' },
+      { status: 'Out for Delivery', icon: 'box' },
+      { status: 'Delivered', icon: 'home' }
+    ];
+
+    /**
+     * Handles the submission of the order tracking form
+     */
+    trackOrderForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const searchValue = document.getElementById('track-input').value.trim();
+
+      if (!searchValue) {
+        trackOrderResults.innerHTML = '<p class="text-red-500">Please enter a Phone Number or Order ID.</p>';
+        return;
+      }
+      
+      trackOrderButton.disabled = true;
+      trackOrderButton.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 mr-2 animate-spin"></i> Tracking...';
+      if (typeof lucide !== 'undefined') { lucide.createIcons(); }
+
+      let q;
+      let isPhoneQuery = false;
+      let isOrderIdQuery = false;
+      
+      try {
+        // --- UPDATED: Query by phone number OR Order ID ---
+        if (searchValue.toUpperCase().startsWith('TJ')) {
+          // This is an Order ID query
+          isOrderIdQuery = true;
+          q = query(
+            ordersCollection,
+            where("publicOrderId", "==", searchValue.toUpperCase())
+          );
+        } else {
+          // This is a Phone Number query
+          isPhoneQuery = true;
+          q = query(
+            ordersCollection,
+            where("customer.phone", "==", searchValue)
+          );
+        }
+
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+          trackOrderResults.innerHTML = '<p class="text-red-500 text-center">No orders found. Please check your details and try again.</p>';
+        } else {
+          // Multiple orders found, render all of them
+          let resultsHtml = '';
+          const orders = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          // Sort by newest first
+          orders.sort((a, b) => (b.createdAt?.toDate() || 0) - (a.createdAt?.toDate() || 0));
+          
+          orders.forEach(order => {
+            resultsHtml += renderTrackingResult(order); // Re-use the singular render function
+          });
+          trackOrderResults.innerHTML = resultsHtml;
+          
+          if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+          }
+        }
+
+      } catch (error) {
+        console.error("Error tracking order: ", error);
+        trackOrderResults.innerHTML = '<p class="text-red-500 text-center">An error occurred while tracking your order. Please try again later.</p>';
+        // This error might be due to the missing index
+        if (error.code === 'failed-precondition') {
+          console.error("---!!! FIRESTORE INDEX MISSING !!!---");
+          if (isPhoneQuery) {
+            console.error("Please create a simple index on 'orders' for 'customer.phone' (Ascending).");
+          }
+          if (isOrderIdQuery) {
+            console.error("Please create a simple index on 'orders' for 'publicOrderId' (Ascending).");
+          }
+          trackOrderResults.innerHTML += '<br><p class="text-xs text-red-700 text-center">(Error: Database query failed. This may be a configuration issue.)</p>';
+        }
+      } finally {
+        trackOrderButton.disabled = false;
+        trackOrderButton.innerHTML = '<i data-lucide="search" class="w-5 h-5 mr-2"></i> Track Order';
+        if (typeof lucide !== 'undefined') { lucide.createIcons(); }
+      }
+    });
+
+    /**
+     * Renders the visual tracking results for a *single* found order
+     * @param {object} order The complete order object from Firestore
+     * @returns {string} HTML string for one order's tracking status
+     */
+    function renderTrackingResult(order) {
+      let currentStepIndex = ORDER_STATUSES.findIndex(step => step === order.status);
+      if (currentStepIndex === -1) currentStepIndex = 0; // Default to first step
+      
+      let stepsHtml = '';
+      trackingSteps.forEach((step, index) => {
+        let stepClass = 'track-step';
+        if (index < currentStepIndex) {
+          stepClass += ' completed'; // Past steps
+        } else if (index === currentStepIndex) {
+          stepClass += ' active'; // Current step
+        }
+        
+        stepsHtml += `
+          <div class="${stepClass}">
+            <div class="track-step-icon">
+              <i data-lucide="${index < currentStepIndex ? 'check' : step.icon}"></i>
+            </div>
+            <div class="track-step-label">${step.status}</div>
+          </div>
+        `;
+      });
+      
+      // Calculate progress bar width
+      const progressPercentage = (currentStepIndex / (ORDER_STATUSES.length - 1)) * 100;
+
+      // Return HTML string instead of setting innerHTML
+      return `
+        <div class="border border-gray-200 rounded-lg p-6 mb-6">
+          <h3 class="text-xl font-semibold text-gray-800 mb-2">Order ID: ${order.publicOrderId}</h3>
+          <p class="text-gray-600 mb-4">Your order is currently ${order.status}.</p>
+          
+          <div class="track-stepper">
+            <!-- Background line -->
+            <!-- Progress line -->
+            <div class="track-stepper-line" style="width: ${progressPercentage}%;"></div>
+            ${stepsHtml}
+          </div>
+        </div>
+      `;
+    }
+
+
+    // --- App Initialization ---
+    // --- Start the App ---
+    initApp();
+
+  </script>
+</body>
+
+</html>
+
+
+
+
