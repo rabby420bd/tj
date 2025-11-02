@@ -1,44 +1,59 @@
-// --- প্যাকেজ ইম্পোর্ট ---
 const express = require('express');
 const bodyParser = require('body-parser');
 const admin = require('firebase-admin');
-const path = require('path');
 const cors = require('cors');
 
-// --- সার্ভার ইনিশিয়ালাইজেশন ---
 const app = express();
 const PORT = process.env.PORT || 3000;
+const isProduction = process.env.NODE_ENV === 'production';
 
-// --- ১. ফায়ারবেস অ্যাডমিন কনফিগারেশন ---
-// Vercel এ deploy করার জন্য FIREBASE_SERVICE_ACCOUNT environment variable থেকে key লোড করা হবে।
 const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
+let db; // Firestore instance
 
-if (!serviceAccountString) {
-  console.error("FATAL ERROR: FIREBASE_SERVICE_ACCOUNT environment variable is not set.");
-  // লোকাল টেস্টিং এর জন্য server.js ফাইলটি বন্ধ করে দেওয়া উচিত যদি key না থাকে।
-  throw new Error("Firebase Service Account key is missing. Please set FIREBASE_SERVICE_ACCOUNT environment variable.");
+if (serviceAccountString) {
+  try {
+    // Vercel Environment Variable থেকে JSON ডেটা পার্স করুন
+    const serviceAccount = JSON.parse(serviceAccountString);
+
+    // Firebase Admin SDK ইনিশিয়ালাইজ করুন
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+      databaseURL: "https://trendy-jamakapor.firebaseio.com" // আপনার ডেটাবেসের URL
+    });
+
+    db = admin.firestore();
+    console.log("Firebase Admin SDK initialized successfully.");
+
+  } catch (error) {
+    console.error("CRITICAL: Error initializing Firebase Admin SDK.", error);
+    
+  }
+} else {
+  console.warn("WARNING: FIREBASE_SERVICE_ACCOUNT is missing. API will fail.");
 }
 
-// এনভায়রনমেন্ট ভেরিয়েবল থেকে JSON ডেটা পার্স করুন
-const serviceAccount = JSON.parse(serviceAccountString);
+const productsCollection = db ? db.collection('products') : null;
+const ordersCollection = db ? db.collection('orders') : null;
 
-// Firebase Admin SDK ইনিশিয়ালাইজ করুন
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-  databaseURL: "https://trendy-jamakapor.firebaseio.com" // আপনার ডেটাবেসের URL
-});
-
-const db = admin.firestore();
-const productsCollection = db.collection('products');
-const ordersCollection = db.collection('orders');
-
-// --- সার্ভার মিডলওয়্যার ---
-// Vercel Serverless Functions এর জন্য CORS
 app.use(cors({ origin: '*' })); 
 app.use(bodyParser.json());
 
 // Express Router ব্যবহার করে /api প্রিফিক্স তৈরি করুন
 const apiRouter = express.Router();
+
+// --- রিকোয়েস্ট হ্যান্ডলিং ফাংশন ---
+
+// ডেটাবেস প্রস্তুত না হলে ত্রুটি দেখানোর জন্য মিডলওয়্যার
+apiRouter.use((req, res, next) => {
+  if (!db) {
+    return res.status(503).json({ 
+      error: 'Database service unavailable.', 
+      details: 'Firebase Admin SDK failed to initialize due to missing or invalid FIREBASE_SERVICE_ACCOUNT environment variable.' 
+    });
+  }
+  next();
+});
+
 
 // A. প্রোডাক্ট ডেটা পড়ুন (GET /api/products)
 apiRouter.get('/products', async (req, res) => {
@@ -177,24 +192,13 @@ apiRouter.get('/track', async (req, res) => {
 // /api রুটের জন্য Express Router কে ব্যবহার করুন
 app.use('/api', apiRouter);
 
-// --- Vercel Fix: index.html কে রুট রিকোয়েস্টের জন্য ব্যবহার করা ---
-// Vercel যখন রুট রিকোয়েস্ট (`/`) পায়, তখন index.html ফাইলটি পাঠায়।
-// কিন্তু যদি API-তে কোনো ত্রুটি হয়, index.html-কে সার্ভ করা ঠিক নয়।
-// Vercel এ এটি স্বয়ংক্রিয়ভাবে হয়ে যায়, তাই এই অংশ local testing ছাড়া দরকার নেই।
-/*
-app.use(express.static(path.join(__dirname, '')));
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
-*/
 
-// লোকাল টেস্টিং এর জন্য সার্ভার শুরু করুন
-if (process.env.NODE_ENV !== 'production') {
+// --- Vercel এর জন্য handler এক্সপোর্ট ---
+module.exports = app;
+
+// লোকাল টেস্টিং এর জন্য সার্ভার শুরু করুন (Vercel এই অংশটি উপেক্ষা করবে)
+if (!isProduction) {
     app.listen(PORT, () => {
         console.log(`Server running at http://localhost:${PORT}`);
-        console.log(`Open http://localhost:${PORT}/index.html in your browser.`);
     });
 }
-
-// Vercel এর জন্য handler এক্সপোর্ট
-module.exports = app;
