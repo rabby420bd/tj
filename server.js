@@ -1,32 +1,35 @@
+// --- প্যাকেজ ইম্পোর্ট ---
 const express = require('express');
 const bodyParser = require('body-parser');
 const admin = require('firebase-admin');
 const cors = require('cors');
 
+// --- সার্ভার ইনিশিয়ালাইজেশন ---
 const app = express();
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
+// --- ১. ফায়ারবেস অ্যাডমিন কনফিগারেশন ---
 const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
 let db; // Firestore instance
 
 if (serviceAccountString) {
   try {
-    // Vercel Environment Variable থেকে JSON ডেটা পার্স করুন
     const serviceAccount = JSON.parse(serviceAccountString);
 
-    // Firebase Admin SDK ইনিশিয়ালাইজ করুন
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-      databaseURL: "https://trendy-jamakapor.firebaseio.com" // আপনার ডেটাবেসের URL
-    });
+    if (!admin.apps.length) { // একাধিক ইনিশিয়ালাইজেশন এড়ানোর জন্য
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+        databaseURL: "https://trendy-jamakapor.firebaseio.com"
+      });
+    }
 
     db = admin.firestore();
     console.log("Firebase Admin SDK initialized successfully.");
 
   } catch (error) {
-    console.error("CRITICAL: Error initializing Firebase Admin SDK.", error);
-    
+    console.error("CRITICAL: Error initializing Firebase Admin SDK. Check JSON format in Environment Variable.", error);
+    // Vercel-এ API কল ব্যর্থ হবে যদি key ভুল হয়।
   }
 } else {
   console.warn("WARNING: FIREBASE_SERVICE_ACCOUNT is missing. API will fail.");
@@ -35,7 +38,9 @@ if (serviceAccountString) {
 const productsCollection = db ? db.collection('products') : null;
 const ordersCollection = db ? db.collection('orders') : null;
 
-app.use(cors({ origin: '*' })); 
+// --- সার্ভার মিডলওয়্যার ---
+// CORS সেটআপ: ফ্রন্টএন্ড এবং ব্যাকএন্ড যোগাযোগ নিশ্চিত করে
+app.use(cors()); 
 app.use(bodyParser.json());
 
 // Express Router ব্যবহার করে /api প্রিফিক্স তৈরি করুন
@@ -46,9 +51,10 @@ const apiRouter = express.Router();
 // ডেটাবেস প্রস্তুত না হলে ত্রুটি দেখানোর জন্য মিডলওয়্যার
 apiRouter.use((req, res, next) => {
   if (!db) {
+    // এররটি JSON format এ পাঠানো হচ্ছে, যা ব্রাউজার বুঝতে পারবে
     return res.status(503).json({ 
       error: 'Database service unavailable.', 
-      details: 'Firebase Admin SDK failed to initialize due to missing or invalid FIREBASE_SERVICE_ACCOUNT environment variable.' 
+      details: 'Firebase Admin SDK failed to initialize. Check FIREBASE_SERVICE_ACCOUNT variable.' 
     });
   }
   next();
@@ -73,7 +79,6 @@ apiRouter.post('/products', async (req, res) => {
     const productData = req.body;
     productData.createdAt = admin.firestore.FieldValue.serverTimestamp();
     
-    // Firestore এ যোগ করুন
     const docRef = await productsCollection.add(productData);
     res.status(201).json({ id: docRef.id, ...productData });
   } catch (error) {
@@ -115,7 +120,6 @@ apiRouter.post('/orders', async (req, res) => {
   try {
     const orderData = req.body;
     
-    // পাবলিক অর্ডার আইডি তৈরি করুন
     const phonePart = orderData.customer.phone.substring(0, 5);
     const uniqueSuffix = Date.now().toString().slice(-3);
     const publicOrderId = `TJ${phonePart}${uniqueSuffix}`;
