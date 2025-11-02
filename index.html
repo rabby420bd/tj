@@ -246,7 +246,7 @@
                   class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
               </div>
             </div>
-            <button type="submit"
+            <button type="submit" id="place-order-btn"
               class="w-full bg-blue-600 text-white py-3 px-4 rounded-md font-semibold hover:bg-blue-700 transition duration-200">
               Place Order
             </button>
@@ -444,7 +444,7 @@
                     <p class="text-xs text-gray-500 mt-1">Sizes must match the list above.</p>
                 </div>
                 <div class="flex space-x-2">
-                  <button type="submit"
+                  <button type="submit" id="save-product-btn"
                     class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md font-semibold hover:bg-blue-700 transition duration-200">
                     Save Product
                   </button>
@@ -480,58 +480,23 @@
     </div>
   </footer>
 
-  <!-- App Logic (JSON/Local Storage Hybrid) -->
+  <!-- App Logic (API Client) -->
   <script>
+    // --- API Endpoints ---
+    // NOTE: For Vercel deployment, the API endpoints will be at the root path of the deployed URL (e.g., https://your-app.vercel.app/api/products)
+    // window.location.origin is used here to handle both local and deployed environments correctly.
+    const API_BASE_URL = window.location.origin;
+
     // --- Global State ---
-    let MOCK_PRODUCTS = []; // Will be populated from products.json
-    let cart = JSON.parse(localStorage.getItem('trendyCart')) || [];
+    let MOCK_PRODUCTS = []; // Product cache populated by API fetch
+    let cart = JSON.parse(localStorage.getItem('trendyCart')) || []; // Cart uses local storage
     let isAdmin = false;
-    let allOrders = JSON.parse(localStorage.getItem('allOrders')) || []; // Orders still use Local Storage
-
-    // --- Global Functions for Local Storage/JSON ---
-    function saveMockProducts() {
-        // NOTE: Since this is a simple HTML/JS file, we cannot write back to products.json.
-        // We will save any changes (from Admin Panel) to Local Storage for persistence during session.
-        localStorage.setItem('MOCK_PRODUCTS', JSON.stringify(MOCK_PRODUCTS));
-    }
-    
-    function loadMockProducts() {
-        // 1. Try to load from Local Storage (for Admin edits persistence)
-        const localProducts = localStorage.getItem('MOCK_PRODUCTS');
-        if (localProducts && localProducts !== JSON.stringify(MOCK_PRODUCTS)) {
-             MOCK_PRODUCTS = JSON.parse(localProducts);
-             return Promise.resolve(MOCK_PRODUCTS);
-        }
-
-        // 2. If no local changes, load from external products.json file
-        return fetch('products.json')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                MOCK_PRODUCTS = data;
-                saveMockProducts(); // Save initial JSON data to local storage
-                return MOCK_PRODUCTS;
-            })
-            .catch(error => {
-                console.error("Error loading products.json. Using hardcoded mock data.", error);
-                // Fallback to initial mock data if JSON file loading fails
-                MOCK_PRODUCTS = [
-                    { id: 'prod1', name: 'Premium Cotton T-Shirt', price: 950.00, originalPrice: 1200.00, description: 'High-quality cotton, breathable and soft. Perfect for daily wear.', images: ['https://placehold.co/400x400/3b82f6/ffffff?text=Blue+Tee'], sizes: ['S', 'M', 'L', 'XL'], stock: { 'S': 10, 'M': 5, 'L': 20, 'XL': 3 } },
-                    { id: 'prod2', name: 'Stylish Denim Jacket', price: 2999.00, originalPrice: null, description: 'Classic denim design, durable and fashionable. Ideal for all seasons.', images: ['https://placehold.co/400x400/1f2937/ffffff?text=Denim+Jacket'], sizes: ['M', 'L', 'XL'], stock: { 'M': 12, 'L': 8, 'XL': 0 } },
-                ];
-                saveMockProducts();
-                return MOCK_PRODUCTS;
-            });
-    }
+    let allOrders = []; // Order cache populated by API fetch
 
     // --- Global Order Statuses Definition ---
     const ORDER_STATUSES = ['Pending', 'Confirmed', 'Packed', 'Shipped', 'In Transit', 'Out for Delivery', 'Delivered'];
 
-    // --- DOM Elements ---
+    // --- DOM Elements (as before) ---
     const pages = document.querySelectorAll('.page');
     const productGrid = document.getElementById('product-grid');
     const productsLoading = document.getElementById('products-loading');
@@ -555,43 +520,32 @@
     const productForm = document.getElementById('product-form');
     const productFormTitle = document.getElementById('product-form-title');
     const adminProductList = document.getElementById('admin-product-list');
+    const placeOrderBtn = document.getElementById('place-order-btn');
+    const saveProductBtn = document.getElementById('save-product-btn');
 
-    // --- Track Order Elements ---
     const trackOrderForm = document.getElementById('track-order-form');
     const trackOrderResults = document.getElementById('track-order-results');
     const trackOrderButton = document.getElementById('track-order-button');
     const navTrackOrder = document.getElementById('nav-track-order');
     const footerTrackOrder = document.getElementById('footer-track-order');
-
-    // --- Utility Functions ---
-    /**
-     * Shows a specific page by ID and hides others
-     */
+    
+    // --- Utility Functions (as before) ---
     function showPage(pageId) {
       if (pageId.startsWith('admin-panel') && !isAdmin) {
         showPage('admin-login-page');
         return;
       }
-      
       pages.forEach(page => {
         page.classList.toggle('active', page.id === pageId);
       });
       window.scrollTo(0, 0);
     }
-
-    /**
-     * Formats a number as BDT currency
-     */
     function formatCurrency(amount) {
       if (typeof amount !== 'number' || isNaN(amount)) {
         amount = 0;
       }
       return `BDT ${amount.toFixed(2)}`;
     }
-
-    /**
-     * Gets the Tailwind CSS classes for an order status badge
-     */
     function getStatusBadgeClass(status) {
       switch (status) {
         case 'Pending': return 'bg-yellow-100 text-yellow-800';
@@ -604,86 +558,43 @@
         default: return 'bg-gray-100 text-gray-800';
       }
     }
-
-    // --- Navigation ---
+    
+    // --- Navigation (as before) ---
     document.getElementById('nav-home').addEventListener('click', (e) => { e.preventDefault(); showPage('home-page'); });
     document.getElementById('nav-cart').addEventListener('click', (e) => { e.preventDefault(); showPage('cart-page'); updateCartView(); });
     document.getElementById('nav-admin').addEventListener('click', (e) => { e.preventDefault(); showPage(isAdmin ? 'admin-panel-page' : 'admin-login-page'); });
     document.getElementById('back-to-home').addEventListener('click', (e) => { e.preventDefault(); showPage('home-page'); });
     document.getElementById('back-to-home-confirm').addEventListener('click', (e) => { e.preventDefault(); showPage('home-page'); });
-    document.getElementById('admin-logout').addEventListener('click', (e) => {
-      e.preventDefault();
-      isAdmin = false;
-      showPage('home-page');
-    });
-
+    document.getElementById('admin-logout').addEventListener('click', (e) => { e.preventDefault(); isAdmin = false; showPage('home-page'); });
     navTrackOrder.addEventListener('click', (e) => { e.preventDefault(); showPage('track-order-page'); });
     footerTrackOrder.addEventListener('click', (e) => { e.preventDefault(); showPage('track-order-page'); });
     deliveryLocationSelect.addEventListener('change', updateCartView);
 
-    // --- Admin Panel Tab Navigation ---
     const adminTabs = document.querySelectorAll('.admin-tab');
     const adminTabContents = document.querySelectorAll('.admin-tab-content');
     adminTabs.forEach(tab => {
       tab.addEventListener('click', () => {
-        adminTabs.forEach(t => {
-          t.classList.remove('border-blue-500', 'text-blue-600');
-          t.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
-        });
+        adminTabs.forEach(t => { t.classList.remove('border-blue-500', 'text-blue-600'); t.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300'); });
         tab.classList.add('border-blue-500', 'text-blue-600');
         tab.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
-
         const targetContentId = tab.id.replace('tab-', 'admin-') + '-content';
-        adminTabContents.forEach(content => {
-          content.style.display = content.id === targetContentId ? 'block' : 'none';
-        });
-        
-        // Refresh orders/products when tab is clicked
-        if (targetContentId === 'admin-orders-content') renderAdminOrders();
+        adminTabContents.forEach(content => { content.style.display = content.id === targetContentId ? 'block' : 'none'; });
+        if (targetContentId === 'admin-orders-content') fetchAndRenderAdminOrders();
         if (targetContentId === 'admin-products-content') renderAdminProductList();
       });
     });
 
-    // --- Cart Logic (Uses localStorage) ---
-    function saveCart() {
-      localStorage.setItem('trendyCart', JSON.stringify(cart));
-      updateCartBadge();
-    }
-
-    function updateCartBadge() {
-      const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-      cartCount.textContent = totalItems;
-      cartCount.style.display = totalItems > 0 ? 'flex' : 'none';
-    }
-
+    // --- Cart Logic (as before, uses localStorage) ---
+    function saveCart() { localStorage.setItem('trendyCart', JSON.stringify(cart)); updateCartBadge(); }
+    function updateCartBadge() { const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0); cartCount.textContent = totalItems; cartCount.style.display = totalItems > 0 ? 'flex' : 'none'; }
     function addToCart(product, selectedSize, selectedQuantity) {
-      if (!product || !selectedSize || selectedQuantity <= 0) {
-        // NOTE: alert() used here as per original template logic, replace with custom modal if needed.
-        alert('Please select a size and quantity.'); 
-        return;
-      }
-      
+      if (!product || !selectedSize || selectedQuantity <= 0) { alert('Please select a size and quantity.'); return; }
       const existingItemIndex = cart.findIndex(item => item.id === product.id && item.size === selectedSize);
-      
-      if (existingItemIndex > -1) {
-        cart[existingItemIndex].quantity += selectedQuantity;
-      } else {
-        cart.push({
-          id: product.id,
-          name: product.name,
-          price: product.price,
-          size: selectedSize,
-          quantity: selectedQuantity,
-          image: product.images[0] || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=Image'
-        });
-      }
-      
-      saveCart();
-      showPage('cart-page');
-      updateCartView();
+      if (existingItemIndex > -1) { cart[existingItemIndex].quantity += selectedQuantity; } 
+      else { cart.push({ id: product.id, name: product.name, price: product.price, size: selectedSize, quantity: selectedQuantity, image: product.images[0] || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=Image' }); }
+      saveCart(); showPage('cart-page'); updateCartView();
     }
-
-    function updateCartView() {
+    function updateCartView() { 
       if (cart.length === 0) {
         cartItems.innerHTML = '<p class="text-gray-600">Your cart is empty.</p>';
         cartSummary.innerHTML = '';
@@ -759,12 +670,8 @@
       // Checkout Page Summary (with Delivery)
       let deliveryCharge = 0;
       const location = deliveryLocationSelect.value;
-      if (location === 'inside_dhaka') {
-        deliveryCharge = 110;
-      } else if (location === 'outside_dhaka') {
-        deliveryCharge = 130;
-      }
-      
+      if (location === 'inside_dhaka') { deliveryCharge = 110; } 
+      else if (location === 'outside_dhaka') { deliveryCharge = 130; }
       const total = subtotal + deliveryCharge;
 
       checkoutSummaryItems.innerHTML = checkoutItemsHtml;
@@ -774,17 +681,13 @@
       checkoutBkashAmount.textContent = formatCurrency(deliveryCharge);
       checkoutCodAmount.textContent = formatCurrency(subtotal);
 
-      // Add event listeners for cart buttons
       document.querySelectorAll('.cart-quantity-change').forEach(button => {
         button.addEventListener('click', (e) => {
           const index = parseInt(e.currentTarget.dataset.index);
           const change = parseInt(e.currentTarget.dataset.change);
           cart[index].quantity += change;
-          if (cart[index].quantity <= 0) {
-            cart[index].quantity = 1;
-          }
-          saveCart();
-          updateCartView();
+          if (cart[index].quantity <= 0) { cart[index].quantity = 1; }
+          saveCart(); updateCartView();
         });
       });
 
@@ -792,35 +695,151 @@
         button.addEventListener('click', (e) => {
           const index = parseInt(e.currentTarget.dataset.index);
           cart.splice(index, 1);
-          saveCart();
-          updateCartView();
+          saveCart(); updateCartView();
         });
       });
 
-      document.getElementById('go-to-checkout').addEventListener('click', () => {
-        showPage('checkout-page');
-      });
-      
-      if (typeof lucide !== 'undefined') {
-        lucide.createIcons();
+      document.getElementById('go-to-checkout').addEventListener('click', () => { showPage('checkout-page'); });
+      if (typeof lucide !== 'undefined') { lucide.createIcons(); }
+    }
+    function clearCart() { cart = []; saveCart(); updateCartView(); }
+
+    // --- Data Fetching and Sending (API Calls) ---
+    async function fetchProducts() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/products`);
+        if (!response.ok) throw new Error('Failed to fetch products');
+        MOCK_PRODUCTS = await response.json();
+        renderProducts();
+      } catch (error) {
+        console.error('Error fetching products from API:', error);
+        productGrid.innerHTML = `<p class="text-red-500 col-span-full">Error loading products. Check if the server is running. (${error.message})</p>`;
+        productsLoading.style.display = 'none';
       }
     }
 
-    function clearCart() {
-      cart = [];
-      saveCart();
-      updateCartView();
+    async function sendOrder(orderData) {
+      placeOrderBtn.disabled = true;
+      placeOrderBtn.textContent = 'Processing...';
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/orders`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(orderData),
+        });
+
+        const result = await response.json();
+        
+        if (!response.ok) throw new Error(result.error || 'Order placement failed');
+
+        // Show confirmation page
+        confirmOrderId.textContent = result.publicOrderId;
+        confirmCodAmount.textContent = formatCurrency(orderData.codAmount);
+        showPage('order-confirmation-page');
+        
+        // Clear cart and form
+        clearCart();
+        checkoutForm.reset();
+        deliveryLocationSelect.value = "";
+        updateCartView();
+
+      } catch (error) {
+        console.error("Error placing order:", error);
+        alert(`There was an error placing your order. Please try again. Error: ${error.message}`);
+      } finally {
+        placeOrderBtn.disabled = false;
+        placeOrderBtn.textContent = 'Place Order';
+      }
     }
 
-    // --- Product Rendering (Uses JSON/MOCK_PRODUCTS) ---
-    async function renderProducts() {
-        // Load products (either from local storage, or from products.json file)
-        await loadMockProducts(); 
+    async function fetchOrders() {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/orders`);
+        if (!response.ok) throw new Error('Failed to fetch orders');
+        allOrders = await response.json();
+        return allOrders;
+      } catch (error) {
+        console.error('Error fetching orders from API:', error);
+        return [];
+      }
+    }
 
-        productsLoading.style.display = 'block';
-        productGrid.innerHTML = '';
+    async function updateProduct(productData, isNew) {
+      saveProductBtn.disabled = true;
+      saveProductBtn.textContent = 'Saving...';
+      try {
+        const method = isNew ? 'POST' : 'PUT';
+        const url = isNew ? `${API_BASE_URL}/api/products` : `${API_BASE_URL}/api/products/${productData.id}`;
         
-        let productsHtml = '';
+        const response = await fetch(url, {
+          method: method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(productData),
+        });
+
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Product update failed');
+        
+        // After successful save, refresh data
+        await fetchProducts(); 
+        clearProductForm();
+
+      } catch (error) {
+        console.error('Error saving product:', error);
+        alert(`Error saving product: ${error.message}`);
+      } finally {
+        saveProductBtn.disabled = false;
+        saveProductBtn.textContent = 'Save Product';
+      }
+    }
+    
+    async function deleteProductApi(productId) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/products/${productId}`, {
+          method: 'DELETE',
+        });
+        if (!response.ok) throw new Error('Product deletion failed');
+        
+        // After successful deletion, refresh data
+        await fetchProducts(); 
+
+      } catch (error) {
+        console.error('Error deleting product:', error);
+        alert(`Error deleting product: ${error.message}`);
+      }
+    }
+    
+    async function updateOrderStatusApi(orderId, newStatus) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: newStatus }),
+        });
+        
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Status update failed');
+        
+        await fetchAndRenderAdminOrders(); // Refresh orders list
+
+      } catch (error) {
+        console.error(`Error updating order ${orderId}:`, error);
+        alert(`There was an error updating the order status: ${error.message}`);
+      }
+    }
+    
+    // --- Product Rendering (API Client) ---
+    function renderProducts() {
+      productsLoading.style.display = 'block';
+      productGrid.innerHTML = '';
+      
+      let productsHtml = '';
+        if (MOCK_PRODUCTS.length === 0) {
+            productGrid.innerHTML = '<p class="text-gray-600 col-span-full">No products found. Check server connection or add products via Admin panel.</p>';
+            productsLoading.style.display = 'none';
+            return;
+        }
+
         MOCK_PRODUCTS.forEach(product => {
             let priceHtml = '';
             if (product.originalPrice && product.originalPrice > product.price) {
@@ -863,25 +882,16 @@
             renderProductDetail(productId);
             });
         });
-        
         productsLoading.style.display = 'none';
-        if(isAdmin) renderAdminProductList();
     }
 
-    /**
-     * Renders a single product's detail page (Uses MOCK_PRODUCTS)
-     */
+    // --- Product Detail Rendering (Client) ---
     function renderProductDetail(productId) {
       const product = MOCK_PRODUCTS.find(p => p.id === productId);
-
-      if (!product) {
-        showPage('home-page');
-        return;
-      }
-      
+      if (!product) { showPage('home-page'); return; }
       showPage('product-page');
       productDetailContent.innerHTML = '<p>Loading product details...</p>';
-
+      
       let imagesHtml = '';
       let thumbnailsHtml = '';
       if (product.images && product.images.length > 0) {
@@ -987,30 +997,20 @@
         const selectedSize = selectedSizeEl ? selectedSizeEl.value : null;
         const selectedQuantity = parseInt(document.getElementById('product-quantity').value);
         
-        if (!selectedSize) {
-          alert('Please select a size.');
-          return;
-        }
+        if (!selectedSize) { alert('Please select a size.'); return; }
         addToCart(product, selectedSize, selectedQuantity);
       });
     }
 
-    // --- Checkout Logic (Uses localStorage for orders) ---
-    checkoutForm.addEventListener('submit', (e) => {
+    // --- Checkout Logic (Client) ---
+    checkoutForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       
-      if (cart.length === 0) {
-        alert("Your cart is empty.");
-        return;
-      }
+      if (cart.length === 0) { alert("Your cart is empty."); return; }
       
       const deliveryLocation = deliveryLocationSelect.value;
-      if (!deliveryLocation) {
-        alert("Please select a delivery location.");
-        return;
-      }
+      if (!deliveryLocation) { alert("Please select a delivery location."); return; }
 
-      // Collect data
       const customerData = {
         name: document.getElementById('customer-name').value,
         phone: document.getElementById('customer-phone').value,
@@ -1020,71 +1020,35 @@
       };
 
       const orderItems = cart.map(item => ({
-        id: item.id,
-        name: item.name,
-        size: item.size,
-        quantity: item.quantity,
-        price: item.price
+        id: item.id, name: item.name, size: item.size, quantity: item.quantity, price: item.price
       }));
       
       const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       
       let deliveryCharge = 0;
-      if (deliveryLocation === 'inside_dhaka') {
-        deliveryCharge = 110;
-      } else if (deliveryLocation === 'outside_dhaka') {
-        deliveryCharge = 130;
-      }
-      
+      if (deliveryLocation === 'inside_dhaka') { deliveryCharge = 110; } 
+      else if (deliveryLocation === 'outside_dhaka') { deliveryCharge = 130; }
       const total = subtotal + deliveryCharge;
       
-      // Generate unique mock ID
-      const mockId = Math.random().toString(36).substring(2, 9);
-      const phonePart = customerData.phone.substring(0, 5);
-      const uniqueSuffix = new Date().getTime().toString().slice(-3);
-      const publicOrderId = `TJ${phonePart}${uniqueSuffix}`;
-      
       const orderData = {
-        id: mockId,
-        customer: customerData,
-        items: orderItems,
-        subtotal: subtotal,
-        deliveryCharge: deliveryCharge,
-        total: total,
-        codAmount: subtotal,
-        prepaidAmount: deliveryCharge,
-        status: 'Pending',
-        createdAt: new Date().toISOString(),
-        publicOrderId: publicOrderId 
+        customer: customerData, items: orderItems, subtotal: subtotal, deliveryCharge: deliveryCharge,
+        total: total, codAmount: subtotal, prepaidAmount: deliveryCharge,
       };
 
-      // Save to local storage (cannot write to orders.json file from browser)
-      allOrders.unshift(orderData); 
-      localStorage.setItem('allOrders', JSON.stringify(allOrders));
-      
-      // Show confirmation page
-      confirmOrderId.textContent = publicOrderId;
-      confirmCodAmount.textContent = formatCurrency(subtotal);
-      showPage('order-confirmation-page');
-      
-      // Clear cart and form
-      clearCart();
-      checkoutForm.reset();
-      deliveryLocationSelect.value = "";
-      updateCartView();
+      // Send order data to the server API
+      await sendOrder(orderData);
     });
     
-    // --- Admin Logic (Uses localStorage) ---
-    
+    // --- Admin Logic (Client) ---
     adminLoginForm.addEventListener('submit', (e) => {
       e.preventDefault();
       const password = document.getElementById('admin-password').value;
-      if (password === 'admin123') {
+      if (password === 'admin123') { // Simple local demo password
         isAdmin = true;
         showPage('admin-panel-page');
         adminLoginForm.reset();
         adminLoginError.style.display = 'none';
-        renderAdminOrders();
+        fetchAndRenderAdminOrders();
         renderAdminProductList();
       } else {
         isAdmin = false;
@@ -1092,14 +1056,16 @@
       }
     });
 
-    /**
-     * Admin: Renders orders from local storage
-     */
-    function renderAdminOrders() {
-      if (allOrders.length === 0) {
+    async function fetchAndRenderAdminOrders() {
+      ordersList.innerHTML = '<p class="text-gray-600">Loading orders from server...</p>';
+      const orders = await fetchOrders();
+      
+      if (orders.length === 0) {
         ordersList.innerHTML = '<p class="text-gray-600">No orders found.</p>';
         return;
       }
+      
+      allOrders = orders;
       
       let ordersHtml = '';
       
@@ -1182,36 +1148,21 @@
       ordersList.innerHTML = ordersHtml;
       addOrderStatusListeners();
     }
-    
-    /**
-     * Admin: Updates an order's status in local storage
-     */
-    function updateOrderStatus(orderId, newStatus) {
-      const orderIndex = allOrders.findIndex(o => o.id === orderId);
-      if (orderIndex > -1) {
-        allOrders[orderIndex].status = newStatus;
-        localStorage.setItem('allOrders', JSON.stringify(allOrders));
-        renderAdminOrders(); // Refresh view
-      }
-    }
 
-    /**
-     * Admin: Adds change listeners to the order status dropdowns
-     */
     function addOrderStatusListeners() {
         document.querySelectorAll('.order-status-select').forEach(select => {
             select.addEventListener('change', (e) => {
                 const orderId = e.target.dataset.id;
                 const newStatus = e.target.value;
-                updateOrderStatus(orderId, newStatus);
+                e.target.disabled = true; // Disable while API call is ongoing
+                updateOrderStatusApi(orderId, newStatus);
             });
         });
     }
 
-    /**
-     * Admin: Render the list of products in the admin panel
-     */
+    // --- Product Management (Client) ---
     function renderAdminProductList() {
+      // Uses MOCK_PRODUCTS which is populated via fetchProducts()
       if (MOCK_PRODUCTS.length === 0) {
         adminProductList.innerHTML = '<p class="text-gray-600">No products created yet.</p>';
         return;
@@ -1244,34 +1195,22 @@
       
       if (typeof lucide !== 'undefined') { lucide.createIcons(); }
       
-      // Add event listeners for edit/delete
       document.querySelectorAll('.admin-edit-product').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const id = e.currentTarget.dataset.id;
           const product = MOCK_PRODUCTS.find(p => p.id === id);
-          if (product) {
-            populateProductForm(product);
-          }
+          if (product) { populateProductForm(product); }
         });
       });
       
       document.querySelectorAll('.admin-delete-product').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const id = e.currentTarget.dataset.id;
-          const productIndex = MOCK_PRODUCTS.findIndex(p => p.id === id);
-          if (productIndex > -1) {
-            MOCK_PRODUCTS.splice(productIndex, 1);
-            saveMockProducts(); 
-            renderAdminProductList(); 
-            renderProducts(); 
-          }
+          deleteProductApi(id);
         });
       });
     }
 
-    /**
-     * Admin: Populate the product form for editing
-     */
     function populateProductForm(product) {
       productFormTitle.textContent = 'Edit Product';
       document.getElementById('product-id').value = product.id;
@@ -1285,9 +1224,6 @@
       window.scrollTo(0, 0);
     }
 
-    /**
-     * Admin: Clear the product form
-     */
     function clearProductForm() {
       productFormTitle.textContent = 'Add New Product';
       productForm.reset();
@@ -1295,21 +1231,15 @@
     }
     document.getElementById('clear-product-form').addEventListener('click', clearProductForm);
 
-    /**
-     * Admin: Handle product form submission (Add/Update)
-     */
     productForm.addEventListener('submit', (e) => {
       e.preventDefault();
-      
       let stockData = {};
-      try {
-        stockData = JSON.parse(document.getElementById('product-stock').value);
-      } catch (error) {
-        alert("Invalid JSON format for Stock. Please correct it.");
-        return;
-      }
+      try { stockData = JSON.parse(document.getElementById('product-stock').value); } 
+      catch (error) { alert("Invalid JSON format for Stock. Please correct it."); return; }
       
       const originalPriceValue = document.getElementById('product-original-price').value;
+      const productId = document.getElementById('product-id').value;
+      const isNew = !productId;
       
       const productData = {
         name: document.getElementById('product-name').value,
@@ -1318,30 +1248,15 @@
         description: document.getElementById('product-description').value,
         images: document.getElementById('product-images').value.split(',').map(url => url.trim()).filter(url => url),
         sizes: document.getElementById('product-sizes').value.split(',').map(s => s.trim().toUpperCase()).filter(s => s),
-        stock: stockData
+        stock: stockData,
+        ...(productId && { id: productId }) 
       };
       
-      const productId = document.getElementById('product-id').value;
-      if (productId) {
-        // Update existing product
-        const index = MOCK_PRODUCTS.findIndex(p => p.id === productId);
-        if (index > -1) {
-          MOCK_PRODUCTS[index] = { id: productId, ...productData };
-        }
-      } else {
-        // Add new product
-        const newId = 'prod' + Date.now().toString().slice(-6);
-        MOCK_PRODUCTS.unshift({ id: newId, ...productData }); 
-      }
-      
-      saveMockProducts(); 
-      clearProductForm();
-      renderAdminProductList();
-      renderProducts(); 
+      updateProduct(productData, isNew);
     });
 
-    // --- Order Tracking Logic (Uses localStorage) ---
-    trackOrderForm.addEventListener('submit', (e) => {
+    // --- Order Tracking Logic (Client) ---
+    trackOrderForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const searchValue = document.getElementById('track-input').value.trim();
 
@@ -1354,24 +1269,26 @@
       trackOrderButton.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 mr-2 animate-spin"></i> Tracking...';
       if (typeof lucide !== 'undefined') { lucide.createIcons(); }
 
-      let foundOrders = allOrders.filter(order => 
-        order.publicOrderId === searchValue || order.customer.phone === searchValue
-      );
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/track?query=${encodeURIComponent(searchValue)}`);
+        const result = await response.json();
 
-      if (foundOrders.length === 0) {
-        trackOrderResults.innerHTML = '<p class="text-red-500 text-center">No orders found. Please check your details and try again.</p>';
-      } else {
-        let resultsHtml = '';
-        foundOrders.forEach(order => {
-          resultsHtml += renderTrackingResult(order);
-        });
-        trackOrderResults.innerHTML = resultsHtml;
+        if (!response.ok || result.length === 0) {
+          trackOrderResults.innerHTML = '<p class="text-red-500 text-center">No orders found. Please check your details and try again.</p>';
+        } else {
+          let resultsHtml = '';
+          result.forEach(order => { resultsHtml += renderTrackingResult(order); });
+          trackOrderResults.innerHTML = resultsHtml;
+          if (typeof lucide !== 'undefined') { lucide.createIcons(); }
+        }
+      } catch (error) {
+        console.error('Error tracking order:', error);
+        trackOrderResults.innerHTML = '<p class="text-red-500 text-center">An error occurred while tracking your order. Check if the server is running.</p>';
+      } finally {
+        trackOrderButton.disabled = false;
+        trackOrderButton.innerHTML = '<i data-lucide="search" class="w-5 h-5 mr-2"></i> Track Order';
         if (typeof lucide !== 'undefined') { lucide.createIcons(); }
       }
-
-      trackOrderButton.disabled = false;
-      trackOrderButton.innerHTML = '<i data-lucide="search" class="w-5 h-5 mr-2"></i> Track Order';
-      if (typeof lucide !== 'undefined') { lucide.createIcons(); }
     });
 
     /**
@@ -1382,6 +1299,16 @@
       if (currentStepIndex === -1) currentStepIndex = 0;
       
       let stepsHtml = '';
+      const trackingSteps = [
+        { status: 'Pending', icon: 'clock' },
+        { status: 'Confirmed', icon: 'check-circle' },
+        { status: 'Packed', icon: 'package' },
+        { status: 'Shipped', icon: 'truck' },
+        { status: 'In Transit', icon: 'route' },
+        { status: 'Out for Delivery', icon: 'box' },
+        { status: 'Delivered', icon: 'home' }
+      ];
+      
       trackingSteps.forEach((step, index) => {
         let stepClass = 'track-step';
         if (index < currentStepIndex) {
@@ -1404,7 +1331,7 @@
 
       return `
         <div class="border border-gray-200 rounded-lg p-6 mb-6">
-          <h3 class="text-xl font-semibold text-gray-800 mb-2">Order ID: ${order.publicOrderId}</h3>
+          <h3 class="text-xl font-semibold text-gray-800 mb-2">Order ID: ${order.publicOrderId || 'N/A'}</h3>
           <p class="text-gray-600 mb-4">Your order is currently ${order.status}.</p>
           
           <div class="track-stepper">
@@ -1419,13 +1346,10 @@
 
     // --- App Initialization ---
     async function initApp() {
-      // Load initial data (tries JSON, falls back to mock, uses localStorage for persistence)
-      await renderProducts(); 
+      await fetchProducts(); 
       updateCartView();
       if (typeof lucide !== 'undefined') { lucide.createIcons(); }
-      if (!document.querySelector('.page.active')) {
-          showPage('home-page');
-      }
+      if (!document.querySelector('.page.active')) { showPage('home-page'); }
     }
 
     // --- Start the App ---
