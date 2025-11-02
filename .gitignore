@@ -1,8 +1,11 @@
-Node Modules (Node.js প্রোজেক্টের জন্য প্রয়োজনীয়)
+# Git দ্বারা উপেক্ষা করার জন্য ফাইলসমূহ
+# Node Modules (Node.js/Express এর জন্য প্রয়োজনীয়)
 node_modules
-Vercel, logs, temporary files
+
+# Firebase Service Account Key (এটি খুবই গুরুত্বপূর্ণ)
+serviceAccountKey.json
+
+# Vercel এবং টেম্পোরারি ফাইল
 .vercel
 npm-debug.log
 yarn-error.log
-Private Firebase Key (অবশ্যই রাখতে হবে)
-serviceAccountKey.json
