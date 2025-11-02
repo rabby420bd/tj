@@ -10,12 +10,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // --- ১. ফায়ারবেস অ্যাডমিন কনফিগারেশন ---
+// Vercel এ deploy করার জন্য FIREBASE_SERVICE_ACCOUNT environment variable থেকে key লোড করা হবে।
 const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
 
 if (!serviceAccountString) {
-  // যদি Vercel এ FIREBASE_SERVICE_ACCOUNT সেট না করা থাকে, তবে এরর দেখাবে।
   console.error("FATAL ERROR: FIREBASE_SERVICE_ACCOUNT environment variable is not set.");
-  // লোকাল টেস্টিং এর জন্য ফলব্যাক রাখা হয়নি, Vercel এ অবশ্যই সেট করতে হবে।
+  // লোকাল টেস্টিং এর জন্য server.js ফাইলটি বন্ধ করে দেওয়া উচিত যদি key না থাকে।
   throw new Error("Firebase Service Account key is missing. Please set FIREBASE_SERVICE_ACCOUNT environment variable.");
 }
 
@@ -33,7 +33,7 @@ const productsCollection = db.collection('products');
 const ordersCollection = db.collection('orders');
 
 // --- সার্ভার মিডলওয়্যার ---
-// Vercel এর Serverless Functions এর জন্য CORS
+// Vercel Serverless Functions এর জন্য CORS
 app.use(cors({ origin: '*' })); 
 app.use(bodyParser.json());
 
@@ -177,12 +177,16 @@ apiRouter.get('/track', async (req, res) => {
 // /api রুটের জন্য Express Router কে ব্যবহার করুন
 app.use('/api', apiRouter);
 
-// রুট পেজ থেকে index.html ফাইলটি পরিবেশন করুন (ফ্রন্টএন্ড)
+// --- Vercel Fix: index.html কে রুট রিকোয়েস্টের জন্য ব্যবহার করা ---
+// Vercel যখন রুট রিকোয়েস্ট (`/`) পায়, তখন index.html ফাইলটি পাঠায়।
+// কিন্তু যদি API-তে কোনো ত্রুটি হয়, index.html-কে সার্ভ করা ঠিক নয়।
+// Vercel এ এটি স্বয়ংক্রিয়ভাবে হয়ে যায়, তাই এই অংশ local testing ছাড়া দরকার নেই।
+/*
 app.use(express.static(path.join(__dirname, '')));
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
-
+*/
 
 // লোকাল টেস্টিং এর জন্য সার্ভার শুরু করুন
 if (process.env.NODE_ENV !== 'production') {
