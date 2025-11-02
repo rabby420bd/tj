@@ -2,7 +2,7 @@
   "name": "trendy-jamakapor-server",
   "version": "1.0.0",
   "description": "Backend API for Trendy Jamakapor using Express and Firebase Admin SDK.",
-  "main": "server.js",
+  "main": "server.js", <--- এই এন্ট্রি পয়েন্টটি Vercel কে Node.js ফাইলটি চিনতে সাহায্য করে।
   "scripts": {
     "start": "node server.js"
   },
