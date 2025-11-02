@@ -1,0 +1,8 @@
+Node Modules (Node.js প্রোজেক্টের জন্য প্রয়োজনীয়)
+node_modules
+Vercel, logs, temporary files
+.vercel
+npm-debug.log
+yarn-error.log
+Private Firebase Key (অবশ্যই রাখতে হবে)
+serviceAccountKey.json
