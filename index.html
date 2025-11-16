@@ -1,1362 +1,985 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full bg-gray-50">
-
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trendy Jamakapor</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/lucide@0.395.0/dist/umd/lucide.min.js"></script>
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-    }
-
-    /* Simple page transition */
-    .page {
-      display: none;
-    }
-
-    .page.active {
-      display: block;
-      animation: fadeIn 0.3s ease-in-out;
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    /* Product image gallery basic styles */
-    .gallery-main-image {
-      aspect-ratio: 1 / 1;
-      object-fit: cover;
-    }
-
-    .gallery-thumbnail {
-      aspect-ratio: 1 / 1;
-      object-fit: cover;
-      cursor: pointer;
-      opacity: 0.7;
-      transition: opacity 0.2s;
-    }
-
-    .gallery-thumbnail.active,
-    .gallery-thumbnail:hover {
-      opacity: 1;
-      border-color: #3b82f6;
-    }
-
-    /* --- NEW: Order Tracking Stepper --- */
-    .track-stepper {
-      display: flex;
-      justify-content: space-between;
-      position: relative;
-      margin: 2rem 0;
-    }
-    .track-stepper::before {
-      content: '';
-      position: absolute;
-      top: 1.25rem;
-      left: 0;
-      right: 0;
-      height: 4px;
-      background-color: #e5e7eb; /* gray-200 */
-      z-index: 1;
-    }
-    .track-stepper-line {
-      position: absolute;
-      top: 1.25rem;
-      left: 0;
-      height: 4px;
-      background-color: #3b82f6; /* blue-500 */
-      z-index: 2;
-      transition: width 0.5s ease;
-    }
-    .track-step {
-      position: relative;
-      z-index: 3;
-      text-align: center;
-      width: 100px;
-    }
-    .track-step-icon {
-      width: 3rem;
-      height: 3rem;
-      border-radius: 9999px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto;
-      border: 4px solid #e5e7eb; /* gray-200 */
-      background-color: #f9fafb; /* gray-50 */
-      transition: all 0.5s ease;
-    }
-    .track-step-icon i {
-      width: 1.25rem;
-      height: 1.25rem;
-      color: #9ca3af; /* gray-400 */
-    }
-    .track-step-label {
-      font-size: 0.75rem;
-      font-medium;
-      color: #6b7280; /* gray-500 */
-      margin-top: 0.5rem;
-      white-space: nowrap;
-    }
-    
-    /* Active step styles */
-    .track-step.active .track-step-icon {
-      border-color: #3b82f6; /* blue-500 */
-      background-color: #dbeafe; /* blue-100 */
-    }
-    .track-step.active .track-step-icon i {
-      color: #3b82f6; /* blue-500 */
-    }
-    .track-step.active .track-step-label {
-      color: #111827; /* gray-900 */
-      font-weight: 600;
-    }
-    
-    /* Completed step styles */
-    .track-step.completed .track-step-icon {
-      border-color: #16a34a; /* green-600 */
-      background-color: #dcfce7; /* green-100 */
-    }
-     .track-step.completed .track-step-icon i {
-       color: #16a34a; /* green-600 */
-    }
-    .track-step.completed .track-step-label {
-      color: #111827; /* gray-900 */
-    }
-    /* --- End Order Tracking Stepper --- */
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trendy Jamakapor - Fashion E-commerce</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #8a3324; /* Deep Burgundy/Red for fashion brand */
+            --secondary: #fce7f3; /* Light Pink */
+            --text-dark: #1f2937;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9fafb;
+            color: var(--text-dark);
+        }
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            transition: all 0.2s;
+        }
+        .btn-primary:hover {
+            background-color: #6d251a;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .admin-link {
+            cursor: pointer;
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        .view-hidden { display: none; }
+        .product-card, .admin-card, .checkout-card {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+        }
+        /* Custom scrollbar for gallery */
+        .image-gallery::-webkit-scrollbar {
+            display: none; /* Hide scrollbar for WebKit browsers */
+        }
+        .image-gallery {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+    </style>
 </head>
+<body>
 
-<body class="flex flex-col min-h-screen bg-gray-100">
-
-  <!-- Header -->
-  <header class="bg-white shadow-md sticky top-0 z-50">
-    <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between items-center h-16">
-        <div class="flex-shrink-0 flex items-center">
-          <a href="#" id="nav-home" class="text-2xl font-bold text-gray-900">Trendy Jamakapor</a>
-        </div>
-        <div class="flex items-center space-x-4">
-          <a href="#" id="nav-cart" class="relative text-gray-600 hover:text-gray-900 p-2 rounded-full hover:bg-gray-100">
-            <i data-lucide="shopping-cart"></i>
-            <span id="cart-count"
-              class="absolute top-0 right-0 block h-5 w-5 rounded-full bg-red-500 text-white text-xs font-medium flex items-center justify-center"
-              style="display: none;">0</span>
-          </a>
-          <!-- NEW: Track Order Link -->
-          <a href="#" id="nav-track-order" class="text-sm font-medium text-gray-600 hover:text-gray-900">Track Order</a>
-          <a href="#" id="nav-admin" class="text-sm font-medium text-gray-600 hover:text-gray-900">Admin</a>
-        </div>
-      </div>
-    </nav>
-  </header>
-
-  <!-- Main Content -->
-  <main class="flex-grow">
-
-    <!-- Home Page (Product Listing) -->
-    <section id="home-page" class="page active max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-      <h1 class="text-3xl font-bold text-gray-900 mb-6">Our Products</h1>
-      <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <!-- Products will be injected here by JS -->
-        <p id="products-loading">Loading products...</p>
-      </div>
-    </section>
-
-    <!-- Product Detail Page -->
-    <section id="product-page" class="page max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-      <button id="back-to-home" class="mb-4 text-blue-600 hover:underline flex items-center">
-        <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i> Back
-      </button>
-      <div id="product-detail-content" class="bg-white p-6 rounded-lg shadow-lg">
-        <!-- Product detail will be injected here -->
-      </div>
-    </section>
-
-    <!-- Cart Page -->
-    <section id="cart-page" class="page max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-      <h1 class="text-3xl font-bold text-gray-900 mb-6">Your Cart</h1>
-      <div id="cart-items" class="bg-white p-6 rounded-lg shadow-lg">
-        <!-- Cart items will be injected here -->
-      </div>
-      <div id="cart-summary" class="mt-6 bg-white p-6 rounded-lg shadow-lg">
-        <!-- Cart summary will be injected here -->
-      </div>
-    </section>
-
-    <!-- Checkout Page -->
-    <section id="checkout-page" class="page max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-      <h1 class="text-3xl font-bold text-gray-900 mb-6">Checkout</h1>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <!-- Order Form -->
-        <div class="bg-white p-6 rounded-lg shadow-lg">
-          <h2 class="text-xl font-semibold mb-4">Shipping Information</h2>
-          <form id="checkout-form" class="space-y-4">
-            <div>
-              <label for="customer-name" class="block text-sm font-medium text-gray-700">Full Name</label>
-              <input type="text" id="customer-name" required
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-            </div>
-            <div>
-              <label for="customer-phone" class="block text-sm font-medium text-gray-700">Phone Number</label>
-              <input type="tel" id="customer-phone" required
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-            </div>
-            <div>
-              <label for="customer-address" class="block text-sm font-medium text-gray-700">Full Address</label>
-              <textarea id="customer-address" rows="3" required
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
-            </div>
-            <!-- UPDATED: Delivery Location -->
-            <div>
-              <label for="delivery-location" class="block text-sm font-medium text-gray-700">Delivery Location</label>
-              <select id="delivery-location" required
-                class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 bg-white">
-                <option value="" disabled selected>Select delivery location</option>
-                <option value="inside_dhaka">Inside Dhaka (110 BDT)</option>
-                <option value="outside_dhaka">Outside Dhaka (130 BDT)</option>
-              </select>
-            </div>
-            <!-- UPDATED: Payment Instructions for COD + bKash -->
-            <div class="bg-blue-50 p-4 rounded-md border border-blue-200">
-              <h3 class="text-lg font-semibold text-gray-800">Payment Instructions</h3>
-              <p class="text-sm text-gray-700 mt-2">
-                Please send <strong class="text-base text-blue-600">ONLY the delivery charge</strong> (110 or 130 BDT) to our bKash number:
-                <strong class="text-base text-blue-600">01401603157</strong> (Send Money)
-              </p>
-              <p class="text-sm text-gray-700 mt-2">
-                The product price is Cash on Delivery (COD). You will pay for the products when you receive them.
-              </p>
-              <div class="mt-4">
-                <label for="bkash-trx-id" class="block text-sm font-medium text-gray-700">Delivery Charge bKash Transaction ID (TrxID)</label>
-                <input type="text" id="bkash-trx-id" required
-                  class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-              </div>
-            </div>
-            <button type="submit" id="place-order-btn"
-              class="w-full bg-blue-600 text-white py-3 px-4 rounded-md font-semibold hover:bg-blue-700 transition duration-200">
-              Place Order
-            </button>
-          </form>
-        </div>
-        <!-- Order Summary -->
-        <div class="bg-white p-6 rounded-lg shadow-lg h-fit">
-          <h2 class="text-xl font-semibold mb-4">Order Summary</h2>
-          <div id="checkout-summary-items" class="space-y-4">
-            <!-- Checkout summary items -->
-          </div>
-          <!-- UPDATED: Summary with Delivery and COD/bKash Split -->
-          <div class="border-t border-gray-200 mt-4 pt-4 space-y-2">
-            <div class="flex justify-between text-base font-medium text-gray-700">
-              <span>Subtotal (Products)</span>
-              <span id="checkout-subtotal-price">BDT 0.00</span>
-            </div>
-            <div class="flex justify-between text-base font-medium text-gray-700">
-              <span>Delivery Charge</span>
-              <span id="checkout-delivery-charge">BDT 0.00</span>
-            </div>
-            <div class="flex justify-between text-lg font-semibold text-gray-900">
-              <span>Total Value</span>
-              <span id="checkout-total-price">BDT 0.00</span>
-            </div>
-            
-            <!-- NEW: Payment Split -->
-            <div class="border-t border-dashed border-gray-300 mt-4 pt-4 space-y-2">
-              <div class="flex justify-between text-base font-semibold text-blue-600">
-                <span>Pay Now (bKash)</span>
-                <span id="checkout-bKash-amount">BDT 0.00</span>
-              </div>
-              <div class="flex justify-between text-base font-semibold text-gray-800">
-                <span>Pay on Delivery (COD)</span>
-                <span id="checkout-cod-amount">BDT 0.00</span>
-              </div>
-            </div>
-            <!-- End Payment Split -->
-            
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Order Confirmation Page -->
-    <section id="order-confirmation-page" class="page max-w-2xl mx-auto py-16 px-4 text-center">
-      <div class="bg-white p-8 rounded-lg shadow-lg">
-        <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100">
-          <i data-lucide="check" class="h-10 w-10 text-green-600"></i>
-        </div>
-        <h1 class="text-3xl font-bold text-gray-900 mt-6">Thank you for your order!</h1>
-        <p class="text-lg text-gray-700 mt-4">
-          Your order has been placed successfully. We will review your <strong>bKash payment (for delivery)</strong> and contact you shortly.
-        </p>
-        <!-- NEW: Show COD amount on confirmation -->
-        <p class="text-md text-gray-800 mt-4 bg-gray-50 p-4 rounded-md">
-          Please have the product amount (<strong id="confirm-cod-amount">BDT 0.00</strong>) ready as
-          <strong>Cash on Delivery</strong> when your order arrives.
-        </p>
-        <p class="text-gray-600 mt-2">Your Order ID is: <strong id="confirm-order-id" class="text-blue-600 text-lg"></strong></p>
-        <button id="back-to-home-confirm"
-          class="mt-8 bg-blue-600 text-white py-2 px-6 rounded-md font-semibold hover:bg-blue-700 transition duration-200">
-          Continue Shopping
-        </button>
-      </div>
-    </section>
-
-    <!-- NEW: Order Tracking Page -->
-    <section id="track-order-page" class="page max-w-2xl mx-auto py-16 px-4">
-      <h1 class="text-3xl font-bold text-gray-900 mb-6 text-center">Track Your Order</h1>
-      <div class="bg-white p-8 rounded-lg shadow-lg">
-        <!-- UPDATED: Track by Phone or Order ID -->
-        <form id="track-order-form" class="space-y-4">
-          <p class="text-sm text-gray-600">Enter your Phone Number or Order ID (e.g., TJ01401123) to track your order status.</p>
-          <div>
-            <label for="track-input" class="block text-sm font-medium text-gray-700">Phone Number or Order ID</label>
-            <input type="text" id="track-input" required
-              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-              placeholder="e.g., 01... or TJ...">
-          </div>
-          <button type="submit" id="track-order-button"
-            class="w-full bg-blue-600 text-white py-2 px-4 rounded-md font-semibold hover:bg-blue-700 transition duration-200 flex items-center justify-center">
-            <i data-lucide="search" class="w-5 h-5 mr-2"></i>
-            Track Order
-          </button>
-        </form>
+    <!-- Firebase SDK Imports and Initialization -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, query, addDoc, getDocs, updateDoc, deleteDoc, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         
-        <!-- Tracking Results -->
-        <div id="track-order-results" class="mt-8">
-          <!-- Results will be injected here -->
-        </div>
-      </div>
-    </section>
+        // Use Debug level for better visibility during development
+        setLogLevel('Debug');
 
-    <!-- Admin Login Page -->
-    <section id="admin-login-page" class="page max-w-md mx-auto py-16 px-4">
-      <div class="bg-white p-8 rounded-lg shadow-lg">
-        <h1 class="text-2xl font-bold text-center text-gray-900 mb-6">Admin Login</h1>
-        <form id="admin-login-form" class="space-y-4">
-          <div>
-            <label for="admin-password" class="block text-sm font-medium text-gray-700">Password</label>
-            <input type="password" id="admin-password"
-              class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-          </div>
-          <p id="admin-login-error" class="text-sm text-red-500" style="display: none;">Invalid password.</p>
-          <p class="text-xs text-gray-500">Demo password: <strong>admin123</strong></p>
-          <button type="submit"
-            class="w-full bg-gray-800 text-white py-2 px-4 rounded-md font-semibold hover:bg-gray-900 transition duration-200">
-            Login
-          </button>
-        </form>
-      </div>
-    </section>
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
 
-    <!-- Admin Panel Page -->
-    <section id="admin-panel-page" class="page max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-      <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold text-gray-900">Admin Panel</h1>
-        <button id="admin-logout"
-          class="text-sm font-medium text-red-600 hover:underline">Logout</button>
-      </div>
+        // --- GLOBAL ADMIN EMAIL CONSTANT ---
+        const ADMIN_EMAIL = 'rabby420bd@gmail.com'; 
+        // ------------------------------------
 
-      <!-- Admin Tabs -->
-      <div class="mb-6 border-b border-gray-200">
-        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
-          <button id="tab-orders"
-            class="admin-tab border-blue-500 text-blue-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
-            View Orders
-          </button>
-          <button id="tab-products"
-            class="admin-tab border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
-            Manage Products
-          </button>
-        </nav>
-      </div>
+        let app, db, auth, userId = null;
+        let isAuthReady = false;
+        let products = {};
+        let currentProduct = null;
+        let currentCart = {}; // {productId: {name, price, size, quantity, stockMap}}
+        let allOrders = [];
 
-      <!-- Admin Content -->
-      <div>
-        <!-- Orders Tab Content -->
-        <div id="admin-orders-content" class="admin-tab-content">
-          <h2 class="text-2xl font-semibold text-gray-800 mb-4">New Orders</h2>
-          <div id="orders-list" class="space-y-6">
-            <!-- Orders will be injected here -->
-            <p>Loading orders...</p>
-          </div>
-        </div>
+        // --- Utility Functions ---
 
-        <!-- Products Tab Content -->
-        <div id="admin-products-content" class="admin-tab-content" style="display: none;">
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Add/Edit Product Form -->
-            <div class="lg:col-span-1 bg-white p-6 rounded-lg shadow-lg h-fit">
-              <h2 id="product-form-title" class="text-2xl font-semibold text-gray-800 mb-4">Add New Product</h2>
-              <form id="product-form" class="space-y-4">
-                <input type="hidden" id="product-id">
-                <div>
-                  <label for="product-name" class="block text-sm font-medium text-gray-700">Product Name</label>
-                  <input type="text" id="product-name" required
-                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <div>
-                  <label for="product-price" class="block text-sm font-medium text-gray-700">Price (BDT)</label>
-                  <input type="number" id="product-price" step="0.01" required
-                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                <div>
-                  <label for="product-original-price" class="block text-sm font-medium text-gray-700">Original Price (Optional)</label>
-                  <input type="number" id="product-original-price" step="0.01"
-                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="e.g., 1500 (if on sale)">
-                </div>
-                <div>
-                  <label for="product-description" class="block text-sm font-medium text-gray-700">Description /
-                    Specs</label>
-                  <textarea id="product-description" rows="4" required
-                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
-                </div>
-                <div>
-                  <label for="product-images" class="block text-sm font-medium text-gray-700">Image URLs (comma-separated)</label>
-                  <textarea id="product-images" rows="3" required
-                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="https://.../img1.jpg, https://.../img2.jpg"></textarea>
-                </div>
-                <div>
-                  <label for="product-sizes" class="block text-sm font-medium text-gray-700">Sizes (comma-separated)</label>
-                  <input type="text" id="product-sizes" required
-                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="S, M, L, XL">
-                </div>
-                <div>
-                  <label for="product-stock" class="block text-sm font-medium text-gray-700">Stock (JSON format)</label>
-                  <input type="text" id="product-stock" required
-                    class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    placeholder='{"S": 10, "M": 20, "L": 15, "XL": 5}'>
-                    <p class="text-xs text-gray-500 mt-1">Sizes must match the list above.</p>
-                </div>
-                <div class="flex space-x-2">
-                  <button type="submit" id="save-product-btn"
-                    class="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md font-semibold hover:bg-blue-700 transition duration-200">
-                    Save Product
-                  </button>
-                  <button type="button" id="clear-product-form"
-                    class="bg-gray-200 text-gray-700 py-2 px-4 rounded-md font-semibold hover:bg-gray-300 transition duration-200">
-                    Clear
-                  </button>
-                </div>
-              </form>
-            </div>
-            <!-- Product List -->
-            <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-lg">
-              <h2 class="text-2xl font-semibold text-gray-800 mb-4">Existing Products</h2>
-              <div id="admin-product-list" class="space-y-4">
-                <!-- Admin product list will be injected here -->
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- Footer -->
-  <footer class="bg-gray-800 text-white mt-12">
-    <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center">
-      <p>&copy; 2025 Trendy Jamakapor. All rights reserved.</p>
-      <!-- NEW: Track Order Link -->
-      <a href="#" id="footer-track-order" class="text-sm text-gray-300 hover:text-white underline mt-2 inline-block">
-        Track Your Order
-      </a>
-    </div>
-  </footer>
-
-  <!-- App Logic (API Client) -->
-  <script>
-    // --- API Endpoints ---
-    // NOTE: For Vercel deployment, the API endpoints will be at the root path of the deployed URL (e.g., https://your-app.vercel.app/api/products)
-    // window.location.origin is used here to handle both local and deployed environments correctly.
-    const API_BASE_URL = window.location.origin;
-
-    // --- Global State ---
-    let MOCK_PRODUCTS = []; // Product cache populated by API fetch
-    let cart = JSON.parse(localStorage.getItem('trendyCart')) || []; // Cart uses local storage
-    let isAdmin = false;
-    let allOrders = []; // Order cache populated by API fetch
-
-    // --- Global Order Statuses Definition ---
-    const ORDER_STATUSES = ['Pending', 'Confirmed', 'Packed', 'Shipped', 'In Transit', 'Out for Delivery', 'Delivered'];
-
-    // --- DOM Elements (as before) ---
-    const pages = document.querySelectorAll('.page');
-    const productGrid = document.getElementById('product-grid');
-    const productsLoading = document.getElementById('products-loading');
-    const productDetailContent = document.getElementById('product-detail-content');
-    const cartCount = document.getElementById('cart-count');
-    const cartItems = document.getElementById('cart-items');
-    const cartSummary = document.getElementById('cart-summary');
-    const checkoutSummaryItems = document.getElementById('checkout-summary-items');
-    const checkoutSubtotalPrice = document.getElementById('checkout-subtotal-price');
-    const checkoutDeliveryCharge = document.getElementById('checkout-delivery-charge');
-    const checkoutTotalPrice = document.getElementById('checkout-total-price');
-    const checkoutBkashAmount = document.getElementById('checkout-bKash-amount');
-    const checkoutCodAmount = document.getElementById('checkout-cod-amount');
-    const checkoutForm = document.getElementById('checkout-form');
-    const deliveryLocationSelect = document.getElementById('delivery-location');
-    const confirmOrderId = document.getElementById('confirm-order-id');
-    const confirmCodAmount = document.getElementById('confirm-cod-amount');
-    const adminLoginForm = document.getElementById('admin-login-form');
-    const adminLoginError = document.getElementById('admin-login-error');
-    let ordersList = document.getElementById('orders-list');
-    const productForm = document.getElementById('product-form');
-    const productFormTitle = document.getElementById('product-form-title');
-    const adminProductList = document.getElementById('admin-product-list');
-    const placeOrderBtn = document.getElementById('place-order-btn');
-    const saveProductBtn = document.getElementById('save-product-btn');
-
-    const trackOrderForm = document.getElementById('track-order-form');
-    const trackOrderResults = document.getElementById('track-order-results');
-    const trackOrderButton = document.getElementById('track-order-button');
-    const navTrackOrder = document.getElementById('nav-track-order');
-    const footerTrackOrder = document.getElementById('footer-track-order');
-    
-    // --- Utility Functions (as before) ---
-    function showPage(pageId) {
-      if (pageId.startsWith('admin-panel') && !isAdmin) {
-        showPage('admin-login-page');
-        return;
-      }
-      pages.forEach(page => {
-        page.classList.toggle('active', page.id === pageId);
-      });
-      window.scrollTo(0, 0);
-    }
-    function formatCurrency(amount) {
-      if (typeof amount !== 'number' || isNaN(amount)) {
-        amount = 0;
-      }
-      return `BDT ${amount.toFixed(2)}`;
-    }
-    function getStatusBadgeClass(status) {
-      switch (status) {
-        case 'Pending': return 'bg-yellow-100 text-yellow-800';
-        case 'Confirmed': return 'bg-green-100 text-green-800';
-        case 'Packed': return 'bg-blue-100 text-blue-800';
-        case 'Shipped': return 'bg-indigo-100 text-indigo-800';
-        case 'In Transit': return 'bg-purple-100 text-purple-800';
-        case 'Out for Delivery': return 'bg-orange-100 text-orange-800';
-        case 'Delivered': return 'bg-gray-100 text-gray-800 line-through';
-        default: return 'bg-gray-100 text-gray-800';
-      }
-    }
-    
-    // --- Navigation (as before) ---
-    document.getElementById('nav-home').addEventListener('click', (e) => { e.preventDefault(); showPage('home-page'); });
-    document.getElementById('nav-cart').addEventListener('click', (e) => { e.preventDefault(); showPage('cart-page'); updateCartView(); });
-    document.getElementById('nav-admin').addEventListener('click', (e) => { e.preventDefault(); showPage(isAdmin ? 'admin-panel-page' : 'admin-login-page'); });
-    document.getElementById('back-to-home').addEventListener('click', (e) => { e.preventDefault(); showPage('home-page'); });
-    document.getElementById('back-to-home-confirm').addEventListener('click', (e) => { e.preventDefault(); showPage('home-page'); });
-    document.getElementById('admin-logout').addEventListener('click', (e) => { e.preventDefault(); isAdmin = false; showPage('home-page'); });
-    navTrackOrder.addEventListener('click', (e) => { e.preventDefault(); showPage('track-order-page'); });
-    footerTrackOrder.addEventListener('click', (e) => { e.preventDefault(); showPage('track-order-page'); });
-    deliveryLocationSelect.addEventListener('change', updateCartView);
-
-    const adminTabs = document.querySelectorAll('.admin-tab');
-    const adminTabContents = document.querySelectorAll('.admin-tab-content');
-    adminTabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        adminTabs.forEach(t => { t.classList.remove('border-blue-500', 'text-blue-600'); t.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300'); });
-        tab.classList.add('border-blue-500', 'text-blue-600');
-        tab.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
-        const targetContentId = tab.id.replace('tab-', 'admin-') + '-content';
-        adminTabContents.forEach(content => { content.style.display = content.id === targetContentId ? 'block' : 'none'; });
-        if (targetContentId === 'admin-orders-content') fetchAndRenderAdminOrders();
-        if (targetContentId === 'admin-products-content') renderAdminProductList();
-      });
-    });
-
-    // --- Cart Logic (as before, uses localStorage) ---
-    function saveCart() { localStorage.setItem('trendyCart', JSON.stringify(cart)); updateCartBadge(); }
-    function updateCartBadge() { const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0); cartCount.textContent = totalItems; cartCount.style.display = totalItems > 0 ? 'flex' : 'none'; }
-    function addToCart(product, selectedSize, selectedQuantity) {
-      if (!product || !selectedSize || selectedQuantity <= 0) { alert('Please select a size and quantity.'); return; }
-      const existingItemIndex = cart.findIndex(item => item.id === product.id && item.size === selectedSize);
-      if (existingItemIndex > -1) { cart[existingItemIndex].quantity += selectedQuantity; } 
-      else { cart.push({ id: product.id, name: product.name, price: product.price, size: selectedSize, quantity: selectedQuantity, image: product.images[0] || 'https://placehold.co/100x100/e2e8f0/94a3b8?text=Image' }); }
-      saveCart(); showPage('cart-page'); updateCartView();
-    }
-    function updateCartView() { 
-      if (cart.length === 0) {
-        cartItems.innerHTML = '<p class="text-gray-600">Your cart is empty.</p>';
-        cartSummary.innerHTML = '';
-        checkoutSummaryItems.innerHTML = '<p class="text-gray-500 text-sm">Your cart is empty.</p>';
-        checkoutSubtotalPrice.textContent = formatCurrency(0);
-        checkoutDeliveryCharge.textContent = formatCurrency(0);
-        checkoutTotalPrice.textContent = formatCurrency(0);
-        checkoutBkashAmount.textContent = formatCurrency(0);
-        checkoutCodAmount.textContent = formatCurrency(0);
-        return;
-      }
-
-      let cartItemsHtml = '';
-      let checkoutItemsHtml = '';
-      let subtotal = 0;
-
-      cart.forEach((item, index) => {
-        const itemTotal = item.price * item.quantity;
-        subtotal += itemTotal;
-
-        cartItemsHtml += `
-          <div class="flex items-center justify-between py-4 border-b border-gray-200">
-            <div class="flex items-center space-x-4">
-              <img src="${item.image}" alt="${item.name}" class="w-20 h-20 object-cover rounded-md">
-              <div>
-                <h3 class="text-lg font-semibold text-gray-800">${item.name}</h3>
-                <p class="text-sm text-gray-600">Size: ${item.size}</p>
-                <p class="text-sm text-gray-600">${formatCurrency(item.price)}</p>
-              </div>
-            </div>
-            <div class="flex items-center space-x-4">
-              <div class="flex items-center border border-gray-300 rounded-md">
-                <button class="cart-quantity-change p-2" data-index="${index}" data-change="-1" ${item.quantity <= 1 ? 'disabled' : ''}>-</button>
-                <span class="px-4">${item.quantity}</span>
-                <button class="cart-quantity-change p-2" data-index="${index}" data-change="1">+</button>
-              </div>
-              <span class="text-lg font-semibold w-24 text-right">${formatCurrency(itemTotal)}</span>
-              <button class="cart-remove-item text-red-500 hover:text-red-700" data-index="${index}">
-                <i data-lucide="trash-2" class="w-5 h-5"></i>
-              </button>
-            </div>
-          </div>
-        `;
-
-        checkoutItemsHtml += `
-          <div class="flex justify-between items-start">
-            <div class="flex space-x-3">
-              <img src="${item.image}" alt="${item.name}" class="w-12 h-12 object-cover rounded-md">
-              <div>
-                <p class="text-sm font-medium text-gray-800">${item.name}</p>
-                <p class="text-xs text-gray-500">Size: ${item.size}</p>
-                <p class="text-xs text-gray-500">Qty: ${item.quantity}</p>
-              </div>
-            </div>
-            <p class="text-sm font-medium text-gray-800">${formatCurrency(itemTotal)}</p>
-          </div>
-        `;
-      });
-
-      cartItems.innerHTML = cartItemsHtml;
-      
-      // Cart Page Summary
-      cartSummary.innerHTML = `
-        <div class="flex justify-between text-xl font-bold text-gray-900">
-          <span>Subtotal</span>
-          <span>${formatCurrency(subtotal)}</span>
-        </div>
-        <button id="go-to-checkout" class="w-full mt-6 bg-blue-600 text-white py-3 px-4 rounded-md font-semibold hover:bg-blue-700 transition duration-200">
-          Proceed to Checkout
-        </button>
-      `;
-
-      // Checkout Page Summary (with Delivery)
-      let deliveryCharge = 0;
-      const location = deliveryLocationSelect.value;
-      if (location === 'inside_dhaka') { deliveryCharge = 110; } 
-      else if (location === 'outside_dhaka') { deliveryCharge = 130; }
-      const total = subtotal + deliveryCharge;
-
-      checkoutSummaryItems.innerHTML = checkoutItemsHtml;
-      checkoutSubtotalPrice.textContent = formatCurrency(subtotal);
-      checkoutDeliveryCharge.textContent = formatCurrency(deliveryCharge);
-      checkoutTotalPrice.textContent = formatCurrency(total);
-      checkoutBkashAmount.textContent = formatCurrency(deliveryCharge);
-      checkoutCodAmount.textContent = formatCurrency(subtotal);
-
-      document.querySelectorAll('.cart-quantity-change').forEach(button => {
-        button.addEventListener('click', (e) => {
-          const index = parseInt(e.currentTarget.dataset.index);
-          const change = parseInt(e.currentTarget.dataset.change);
-          cart[index].quantity += change;
-          if (cart[index].quantity <= 0) { cart[index].quantity = 1; }
-          saveCart(); updateCartView();
-        });
-      });
-
-      document.querySelectorAll('.cart-remove-item').forEach(button => {
-        button.addEventListener('click', (e) => {
-          const index = parseInt(e.currentTarget.dataset.index);
-          cart.splice(index, 1);
-          saveCart(); updateCartView();
-        });
-      });
-
-      document.getElementById('go-to-checkout').addEventListener('click', () => { showPage('checkout-page'); });
-      if (typeof lucide !== 'undefined') { lucide.createIcons(); }
-    }
-    function clearCart() { cart = []; saveCart(); updateCartView(); }
-
-    // --- Data Fetching and Sending (API Calls) ---
-    async function fetchProducts() {
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/products`);
-        if (!response.ok) throw new Error('Failed to fetch products');
-        MOCK_PRODUCTS = await response.json();
-        renderProducts();
-      } catch (error) {
-        console.error('Error fetching products from API:', error);
-        productGrid.innerHTML = `<p class="text-red-500 col-span-full">Error loading products. Check if the server is running. (${error.message})</p>`;
-        productsLoading.style.display = 'none';
-      }
-    }
-
-    async function sendOrder(orderData) {
-      placeOrderBtn.disabled = true;
-      placeOrderBtn.textContent = 'Processing...';
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/orders`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(orderData),
-        });
-
-        const result = await response.json();
-        
-        if (!response.ok) throw new Error(result.error || 'Order placement failed');
-
-        // Show confirmation page
-        confirmOrderId.textContent = result.publicOrderId;
-        confirmCodAmount.textContent = formatCurrency(orderData.codAmount);
-        showPage('order-confirmation-page');
-        
-        // Clear cart and form
-        clearCart();
-        checkoutForm.reset();
-        deliveryLocationSelect.value = "";
-        updateCartView();
-
-      } catch (error) {
-        console.error("Error placing order:", error);
-        alert(`There was an error placing your order. Please try again. Error: ${error.message}`);
-      } finally {
-        placeOrderBtn.disabled = false;
-        placeOrderBtn.textContent = 'Place Order';
-      }
-    }
-
-    async function fetchOrders() {
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/orders`);
-        if (!response.ok) throw new Error('Failed to fetch orders');
-        allOrders = await response.json();
-        return allOrders;
-      } catch (error) {
-        console.error('Error fetching orders from API:', error);
-        return [];
-      }
-    }
-
-    async function updateProduct(productData, isNew) {
-      saveProductBtn.disabled = true;
-      saveProductBtn.textContent = 'Saving...';
-      try {
-        const method = isNew ? 'POST' : 'PUT';
-        const url = isNew ? `${API_BASE_URL}/api/products` : `${API_BASE_URL}/api/products/${productData.id}`;
-        
-        const response = await fetch(url, {
-          method: method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(productData),
-        });
-
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || 'Product update failed');
-        
-        // After successful save, refresh data
-        await fetchProducts(); 
-        clearProductForm();
-
-      } catch (error) {
-        console.error('Error saving product:', error);
-        alert(`Error saving product: ${error.message}`);
-      } finally {
-        saveProductBtn.disabled = false;
-        saveProductBtn.textContent = 'Save Product';
-      }
-    }
-    
-    async function deleteProductApi(productId) {
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/products/${productId}`, {
-          method: 'DELETE',
-        });
-        if (!response.ok) throw new Error('Product deletion failed');
-        
-        // After successful deletion, refresh data
-        await fetchProducts(); 
-
-      } catch (error) {
-        console.error('Error deleting product:', error);
-        alert(`Error deleting product: ${error.message}`);
-      }
-    }
-    
-    async function updateOrderStatusApi(orderId, newStatus) {
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/orders/${orderId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus }),
-        });
-        
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.error || 'Status update failed');
-        
-        await fetchAndRenderAdminOrders(); // Refresh orders list
-
-      } catch (error) {
-        console.error(`Error updating order ${orderId}:`, error);
-        alert(`There was an error updating the order status: ${error.message}`);
-      }
-    }
-    
-    // --- Product Rendering (API Client) ---
-    function renderProducts() {
-      productsLoading.style.display = 'block';
-      productGrid.innerHTML = '';
-      
-      let productsHtml = '';
-        if (MOCK_PRODUCTS.length === 0) {
-            productGrid.innerHTML = '<p class="text-gray-600 col-span-full">No products found. Check server connection or add products via Admin panel.</p>';
-            productsLoading.style.display = 'none';
-            return;
-        }
-
-        MOCK_PRODUCTS.forEach(product => {
-            let priceHtml = '';
-            if (product.originalPrice && product.originalPrice > product.price) {
-            priceHtml = `
-                <p class="text-lg font-bold text-red-600 mt-2">
-                ${formatCurrency(product.price)}
-                <del class="text-sm font-normal text-gray-500 ml-2">${formatCurrency(product.originalPrice)}</del>
-                </p>
-            `;
+        // Display custom modal/message box (instead of alert/confirm)
+        window.showMessage = (title, message, isError = false) => {
+            const modal = document.getElementById('message-modal');
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+            const header = document.getElementById('modal-header');
+            if (isError) {
+                header.classList.remove('bg-green-500');
+                header.classList.add('bg-red-500');
             } else {
-            priceHtml = `<p class="text-lg font-bold text-blue-600 mt-2">${formatCurrency(product.price)}</p>`;
+                header.classList.remove('bg-red-500');
+                header.classList.add('bg-green-500');
             }
-            
-            productsHtml += `
-            <div class="bg-white rounded-lg shadow-lg overflow-hidden transition-shadow duration-300 hover:shadow-xl">
-                <a href="#" class="product-link" data-id="${product.id}">
-                <img src="${product.images && product.images.length > 0 ? product.images[0] : 'https://placehold.co/400x400/e2e8f0/94a3b8?text=Image'}" 
-                        alt="${product.name}" 
-                        class="w-full h-56 object-cover"
-                        onerror="this.src='https://placehold.co/400x400/e2e8f0/94a3b8?text=Image+Not+Found'">
-                </a>
-                <div class="p-4">
-                <h3 class="text-lg font-semibold text-gray-800 truncate">
-                    <a href="#" class="product-link" data-id="${product.id}">${product.name}</a>
-                </h3>
-                ${priceHtml}
-                <button class="product-link w-full mt-4 bg-gray-800 text-white py-2 px-4 rounded-md font-semibold hover:bg-gray-900 transition duration-200" data-id="${product.id}">
-                    View Details
-                </button>
+            modal.classList.remove('hidden');
+        };
+
+        window.showView = (viewId) => {
+            document.querySelectorAll('.app-view').forEach(view => {
+                view.classList.add('view-hidden');
+            });
+            document.getElementById(viewId).classList.remove('view-hidden');
+            window.scrollTo(0, 0); // Scroll to top on view change
+        };
+
+        // --- Firebase Initialization and Authentication ---
+
+        const initFirebase = async () => {
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                await setPersistence(auth, browserSessionPersistence);
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log("Firebase Auth State Changed. User ID:", userId);
+
+                        if (!isAuthReady) {
+                            // First time sign-in check
+                            isAuthReady = true;
+                            // Set up public data listeners
+                            setupPublicDataListeners();
+                            if(document.getElementById('admin-view').classList.contains('view-hidden')) {
+                                showView('home-view'); // Default view
+                            }
+                        }
+                    } else {
+                        userId = null;
+                        if (!isAuthReady) {
+                             // Handle initial sign-in for anonymous user
+                            if (initialAuthToken) {
+                                await signInWithCustomToken(auth, initialAuthToken);
+                            } else {
+                                await signInAnonymously(auth);
+                            }
+                        } else {
+                            // User logged out
+                            isAuthReady = true;
+                            showView('home-view');
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error("Firebase Initialization Error:", error);
+                showMessage("Setup Error", "Failed to initialize the application. Please check console for details.", true);
+            }
+        };
+
+        // --- Firestore Listeners (Public Data) ---
+        const getPublicCollectionRef = (name) => collection(db, 'artifacts', appId, 'public', 'data', name);
+
+        const setupPublicDataListeners = () => {
+            // 1. Products Listener
+            const productsQuery = query(getPublicCollectionRef('products'));
+            onSnapshot(productsQuery, (snapshot) => {
+                products = {};
+                snapshot.forEach(doc => {
+                    products[doc.id] = { id: doc.id, ...doc.data() };
+                });
+                console.log("Products updated:", Object.keys(products).length, "items.");
+                renderProducts(); // Update Home View
+                // If on product page, re-render
+                if (currentProduct) {
+                    currentProduct = products[currentProduct.id];
+                    if (currentProduct) showProductDetail(currentProduct.id);
+                }
+            }, (error) => console.error("Error fetching products:", error));
+
+            // 2. Orders Listener (Only relevant for Admin)
+            const ordersQuery = query(getPublicCollectionRef('orders'));
+            onSnapshot(ordersQuery, (snapshot) => {
+                allOrders = [];
+                snapshot.forEach(doc => {
+                    allOrders.push({ id: doc.id, ...doc.data() });
+                });
+                allOrders.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+                console.log("Orders updated:", allOrders.length, "orders.");
+                renderAdminOrders(); // Update Admin View if active
+            }, (error) => console.error("Error fetching orders:", error));
+        };
+
+        // --- Home View Logic ---
+
+        window.renderProducts = () => {
+            const container = document.getElementById('product-list');
+            if (!container) return;
+
+            if (Object.keys(products).length === 0) {
+                container.innerHTML = `<p class="text-center text-gray-500 py-12 col-span-full">No products found. ${auth.currentUser?.email ? 'Go to Admin Panel to add some!' : 'Check back later!'}</p>`;
+                return;
+            }
+
+            container.innerHTML = Object.values(products).map(p => `
+                <div class="product-card flex flex-col cursor-pointer hover:shadow-xl transition duration-300" onclick="showProductDetail('${p.id}')">
+                    <img src="${p.images?.[0] || 'https://placehold.co/400x500/fce7f3/8a3324?text=Trendy+Item'}"
+                         alt="${p.name}" class="w-full h-64 object-cover rounded-t-lg mb-4">
+                    <div class="flex-grow">
+                        <h3 class="text-lg font-semibold truncate mb-1">${p.name}</h3>
+                        <p class="text-xl font-bold text-gray-800">BDT ${p.price.toLocaleString('en-US')}</p>
+                    </div>
+                    <button class="mt-4 w-full py-2 btn-primary rounded-lg text-sm">View Details</button>
                 </div>
-            </div>
+            `).join('');
+        };
+
+        // --- Product Detail View Logic ---
+
+        window.showProductDetail = (productId) => {
+            const p = products[productId];
+            if (!p) {
+                showMessage("Error", "Product not found.", true);
+                showView('home-view');
+                return;
+            }
+            currentProduct = p;
+            
+            const view = document.getElementById('product-view');
+            
+            // Generate Size Options
+            const sizes = Object.keys(p.stock || {}).filter(size => p.stock[size] > 0);
+            const sizeOptions = sizes.length > 0 ? sizes.map(size => `
+                <label class="inline-flex items-center mr-4 mb-2">
+                    <input type="radio" name="productSize" value="${size}"
+                           class="form-radio h-4 w-4 text-pink-600 focus:ring-var(--primary)" required>
+                    <span class="ml-2 text-sm font-medium border border-gray-300 rounded-lg px-3 py-1 hover:bg-gray-50 transition duration-150">${size}</span>
+                </label>
+            `).join('') : '<p class="text-red-500 font-semibold">Out of Stock</p>';
+
+            // Generate Image Gallery
+            const galleryHtml = (p.images || []).map((imgUrl, index) => `
+                <img src="${imgUrl}" alt="${p.name} Image ${index + 1}" class="w-24 h-24 object-cover rounded-md cursor-pointer hover:opacity-80 transition duration-200"
+                     onclick="document.getElementById('main-product-image').src = this.src;">
+            `).join('');
+
+
+            view.innerHTML = `
+                <div class="max-w-4xl mx-auto product-card">
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <!-- Image Gallery -->
+                        <div>
+                            <img id="main-product-image" src="${p.images?.[0] || 'https://placehold.co/600x800/fce7f3/8a3324?text=Trendy+Item'}"
+                                 alt="${p.name}" class="w-full h-auto object-cover rounded-lg shadow-lg mb-4">
+                            <div class="image-gallery flex overflow-x-auto space-x-2 pb-2">
+                                ${galleryHtml}
+                            </div>
+                        </div>
+
+                        <!-- Product Details -->
+                        <div>
+                            <h1 class="text-3xl font-extrabold text-var(--text-dark) mb-2">${p.name}</h1>
+                            <p class="text-4xl font-black text-red-600 mb-6">BDT ${p.price.toLocaleString('en-US')}</p>
+                            
+                            <h2 class="text-lg font-bold mb-2">Description</h2>
+                            <p class="text-gray-600 mb-6 whitespace-pre-wrap">${p.description}</p>
+                            
+                            <form id="product-purchase-form" onsubmit="event.preventDefault(); handleBuyNow()">
+                                <h2 class="text-lg font-bold mb-2">Select Size:</h2>
+                                <div class="mb-6" id="size-options-container">
+                                    ${sizeOptions}
+                                </div>
+                                
+                                <label for="quantity" class="block text-lg font-bold mb-2">Quantity:</label>
+                                <input type="number" id="quantity" value="1" min="1" max="10" required
+                                       class="mb-8 w-24 p-2 border border-gray-300 rounded-lg focus:ring-var(--primary) focus:border-var(--primary)">
+                                
+                                <button type="submit" ${sizes.length === 0 ? 'disabled' : ''}
+                                        class="w-full py-3 btn-primary font-semibold text-lg rounded-lg ${sizes.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}">
+                                    Buy Now
+                                </button>
+                                <button type="button" onclick="showView('home-view')"
+                                        class="w-full mt-4 py-3 bg-gray-200 text-gray-700 font-semibold text-lg rounded-lg hover:bg-gray-300 transition duration-200">
+                                    Continue Shopping
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             `;
-        });
-        productGrid.innerHTML = productsHtml;
-        
-        document.querySelectorAll('.product-link').forEach(link => {
-            link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const productId = e.currentTarget.dataset.id;
-            renderProductDetail(productId);
-            });
-        });
-        productsLoading.style.display = 'none';
-    }
+            showView('product-view');
+        };
 
-    // --- Product Detail Rendering (Client) ---
-    function renderProductDetail(productId) {
-      const product = MOCK_PRODUCTS.find(p => p.id === productId);
-      if (!product) { showPage('home-page'); return; }
-      showPage('product-page');
-      productDetailContent.innerHTML = '<p>Loading product details...</p>';
-      
-      let imagesHtml = '';
-      let thumbnailsHtml = '';
-      if (product.images && product.images.length > 0) {
-        product.images.forEach((img, index) => {
-          if (index === 0) {
-            imagesHtml = `<img id="main-product-image" src="${img}" alt="${product.name}" class="w-full rounded-lg gallery-main-image">`;
-          }
-          thumbnailsHtml += `
-            <img src="${img}" alt="Thumbnail ${index + 1}" 
-                  class="gallery-thumbnail w-20 h-20 rounded-md border-2 ${index === 0 ? 'active border-blue-500' : 'border-transparent'}"
-                  data-src="${img}">
-          `;
-        });
-      } else {
-        imagesHtml = `<img id="main-product-image" src="https://placehold.co/600x600/e2e8f0/94a3b8?text=Image" alt="${product.name}" class="w-full rounded-lg gallery-main-image">`;
-      }
+        window.handleBuyNow = () => {
+            const form = document.getElementById('product-purchase-form');
+            const selectedSize = form.querySelector('input[name="productSize"]:checked')?.value;
+            const quantity = parseInt(document.getElementById('quantity').value, 10);
 
-      let sizesHtml = '';
-      if (product.sizes && product.sizes.length > 0) {
-        product.sizes.forEach(size => {
-          const stock = product.stock ? (product.stock[size] || 0) : 0;
-          const isDisabled = stock <= 0;
-          sizesHtml += `
-            <div>
-              <input type="radio" name="product-size" id="size-${size}" value="${size}" class="sr-only" ${isDisabled ? 'disabled' : ''}>
-              <label for="size-${size}" 
-                class="flex items-center justify-center px-4 py-2 border rounded-md text-sm font-medium cursor-pointer 
-                        ${isDisabled ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50 peer-checked:bg-blue-600 peer-checked:text-white peer-checked:border-blue-600'}">
-                ${size} ${isDisabled ? '(Out of Stock)' : ''}
-              </label>
-            </div>
-          `;
-        });
-      } else {
-        sizesHtml = '<p class="text-sm text-gray-500">No sizes available.</p>';
-      }
+            if (!selectedSize) {
+                showMessage("Error", "Please select a size before proceeding.", true);
+                return;
+            }
+            if (quantity <= 0 || !quantity) {
+                showMessage("Error", "Quantity must be at least 1.", true);
+                return;
+            }
+            if (currentProduct.stock[selectedSize] < quantity) {
+                showMessage("Error", `Only ${currentProduct.stock[selectedSize]} units of size ${selectedSize} are available.`, true);
+                return;
+            }
 
-      let priceHtml = '';
-      if (product.originalPrice && product.originalPrice > product.price) {
-        priceHtml = `
-          <div class="flex items-baseline gap-3 mt-2">
-            <p class="text-3xl font-bold text-red-600">${formatCurrency(product.price)}</p>
-            <del class="text-2xl font-normal text-gray-500">${formatCurrency(product.originalPrice)}</del>
-          </div>
-        `;
-      } else {
-        priceHtml = `<p class="text-3xl font-bold text-blue-600 mt-2">${formatCurrency(product.price)}</p>`;
-      }
+            // Prepare a temporary cart for checkout (since the requirement is direct buy)
+            currentCart = {
+                [currentProduct.id]: {
+                    id: currentProduct.id,
+                    name: currentProduct.name,
+                    price: currentProduct.price,
+                    size: selectedSize,
+                    quantity: quantity,
+                    stockMap: currentProduct.stock,
+                    image: currentProduct.images?.[0]
+                }
+            };
+            
+            renderCheckout();
+        };
 
-      productDetailContent.innerHTML = `
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            ${imagesHtml}
-            <div class="flex space-x-2 mt-4 overflow-x-auto">
-              ${thumbnailsHtml}
-            </div>
-          </div>
-          
-          <div>
-            <h2 class="text-3xl font-bold text-gray-900">${product.name}</h2>
-            ${priceHtml}
-            <div class="mt-6">
-              <h4 class="text-sm font-medium text-gray-700">Select Size</h4>
-              <fieldset class="mt-2">
-                <legend class="sr-only">Choose a size</legend>
-                <div id="product-size-options" class="flex flex-wrap gap-3">
-                  ${sizesHtml}
+        // --- Checkout View Logic ---
+
+        const DELIVERY_CHARGE = {
+            'Inside Dhaka': 110,
+            'Outside Dhaka': 130
+        };
+
+        window.renderCheckout = () => {
+            if (Object.keys(currentCart).length === 0) {
+                showMessage("Error", "Your cart is empty. Please select a product first.", true);
+                showView('home-view');
+                return;
+            }
+
+            const item = Object.values(currentCart)[0]; // Since 'Buy Now' only supports one item for now
+            const subtotal = item.price * item.quantity;
+            let deliveryCharge = 0;
+            let totalAmount = subtotal;
+
+            const cartDetails = `
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-4 border-b pb-4">
+                        <img src="${item.image || 'https://placehold.co/60x80/f0f9ff/1f2937?text=Item'}" alt="${item.name}" class="w-16 h-20 object-cover rounded-md">
+                        <div class="flex-grow">
+                            <p class="font-semibold">${item.name}</p>
+                            <p class="text-sm text-gray-500">Size: ${item.size} | Qty: ${item.quantity}</p>
+                        </div>
+                        <p class="font-bold text-lg">BDT ${(item.price * item.quantity).toLocaleString('en-US')}</p>
+                    </div>
                 </div>
-              </fieldset>
-            </div>
-            
-            <div class="mt-6">
-              <label for="product-quantity" class="text-sm font-medium text-gray-700">Quantity</label>
-              <input type="number" id="product-quantity" value="1" min="1" max="10" 
-                      class="mt-1 w-20 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-            </div>
-            
-            <button id="add-to-cart-btn" class="w-full mt-8 bg-blue-600 text-white py-3 px-4 rounded-md font-semibold hover:bg-blue-700 transition duration-200 flex items-center justify-center space-x-2">
-              <i data-lucide="shopping-cart" class="w-5 h-5"></i>
-              <span>Add to Cart</span>
-            </button>
-            
-            <div class="mt-8">
-              <h4 class="text-lg font-medium text-gray-800 mb-2">Specifications</h4>
-              <p class="text-gray-600 whitespace-pre-wrap">${product.description || 'No description available.'}</p>
-            </div>
-          </div>
-        </div>
-      `;
-      
-      if (typeof lucide !== 'undefined') { lucide.createIcons(); }
+            `;
 
-      document.querySelectorAll('.gallery-thumbnail').forEach(thumb => {
-        thumb.addEventListener('click', (e) => {
-          document.getElementById('main-product-image').src = e.currentTarget.dataset.src;
-          document.querySelectorAll('.gallery-thumbnail').forEach(t => t.classList.remove('active', 'border-blue-500'));
-          e.currentTarget.classList.add('active', 'border-blue-500');
-        });
-      });
+            const checkoutView = document.getElementById('checkout-view');
+            checkoutView.innerHTML = `
+                <div class="max-w-3xl mx-auto checkout-card">
+                    <h1 class="text-3xl font-bold text-center text-var(--primary) mb-8">Checkout & Payment</h1>
+                    
+                    <div class="mb-8">
+                        <h2 class="text-xl font-semibold mb-4">Order Summary</h2>
+                        ${cartDetails}
+                        <div class="mt-4 pt-4 border-t border-dashed space-y-2">
+                            <div class="flex justify-between">
+                                <span>Subtotal:</span>
+                                <span class="font-semibold">BDT ${subtotal.toLocaleString('en-US')}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Delivery Charge:</span>
+                                <span class="font-semibold text-red-500" id="delivery-charge-display">BDT 0</span>
+                            </div>
+                            <div class="flex justify-between text-2xl font-bold pt-2 border-t mt-4">
+                                <span>Total Amount:</span>
+                                <span class="text-var(--primary)" id="total-amount-display">BDT ${subtotal.toLocaleString('en-US')}</span>
+                            </div>
+                        </div>
+                    </div>
 
-      document.getElementById('add-to-cart-btn').addEventListener('click', () => {
-        const selectedSizeEl = document.querySelector('input[name="product-size"]:checked');
-        const selectedSize = selectedSizeEl ? selectedSizeEl.value : null;
-        const selectedQuantity = parseInt(document.getElementById('product-quantity').value);
+                    <form id="checkout-form" onsubmit="event.preventDefault(); handleCheckoutSubmit(event)">
+                        <h2 class="text-xl font-semibold mb-4">Customer Details</h2>
+                        <div class="space-y-4 mb-8">
+                            <div>
+                                <label for="fullName" class="block text-sm font-medium text-gray-700">Full Name</label>
+                                <input type="text" id="fullName" required class="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-var(--primary) focus:border-var(--primary)">
+                            </div>
+                            <div>
+                                <label for="phone" class="block text-sm font-medium text-gray-700">Phone Number (e.g., +8801...)</label>
+                                <input type="tel" id="phone" required class="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-var(--primary) focus:border-var(--primary)">
+                            </div>
+                            <div>
+                                <label for="address" class="block text-sm font-medium text-gray-700">Detailed Address</label>
+                                <textarea id="address" rows="3" required class="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-var(--primary) focus:border-var(--primary)"></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Delivery Location</label>
+                                <div class="flex space-x-4">
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="location" value="Inside Dhaka" checked onchange="updateDeliveryCharge(${subtotal})" class="form-radio h-4 w-4 text-var(--primary) focus:ring-var(--primary)">
+                                        <span class="ml-2">Inside Dhaka (BDT 110)</span>
+                                    </label>
+                                    <label class="inline-flex items-center">
+                                        <input type="radio" name="location" value="Outside Dhaka" onchange="updateDeliveryCharge(${subtotal})" class="form-radio h-4 w-4 text-var(--primary) focus:ring-var(--primary)">
+                                        <span class="ml-2">Outside Dhaka (BDT 130)</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h2 class="text-xl font-semibold mb-4">Payment Confirmation</h2>
+                        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 rounded-lg">
+                            <p class="font-bold text-yellow-800">Please send the calculated Delivery Charge to our bKash Personal Number:</p>
+                            <p class="text-2xl font-extrabold text-var(--primary) my-2">01401603157</p>
+                            <p class="text-sm text-yellow-800">After sending, enter the Transaction ID (Trx ID) below.</p>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label for="transactionId" class="block text-sm font-medium text-gray-700">bKash Transaction ID (Trx ID)</label>
+                            <input type="text" id="transactionId" required placeholder="e.g., 8G2Y1A0B..." class="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-var(--primary) focus:border-var(--primary)">
+                        </div>
+
+                        <button type="submit" class="w-full py-4 btn-primary font-bold text-xl rounded-lg">
+                            Confirm Order
+                        </button>
+                    </form>
+                </div>
+            `;
+            // Initialize delivery charge display
+            updateDeliveryCharge(subtotal);
+            showView('checkout-view');
+        };
+
+        window.updateDeliveryCharge = (subtotal) => {
+            const location = document.querySelector('input[name="location"]:checked').value;
+            const charge = DELIVERY_CHARGE[location];
+            const total = subtotal + charge;
+
+            document.getElementById('delivery-charge-display').textContent = `BDT ${charge.toLocaleString('en-US')}`;
+            document.getElementById('total-amount-display').textContent = `BDT ${total.toLocaleString('en-US')}`;
+            // Store the calculated total and charge in the form element for submission
+            document.getElementById('checkout-form').dataset.deliveryCharge = charge;
+            document.getElementById('checkout-form').dataset.totalAmount = total;
+            document.getElementById('checkout-form').dataset.location = location;
+        };
+
+        window.handleCheckoutSubmit = async (event) => {
+            const form = event.target;
+            const item = Object.values(currentCart)[0];
+            const deliveryCharge = parseInt(form.dataset.deliveryCharge, 10);
+            const totalAmount = parseInt(form.dataset.totalAmount, 10);
+            const location = form.dataset.location;
+
+            const newOrder = {
+                customerName: document.getElementById('fullName').value,
+                phone: document.getElementById('phone').value,
+                address: document.getElementById('address').value,
+                location: location,
+                deliveryCharge: deliveryCharge,
+                transactionId: document.getElementById('transactionId').value,
+                items: [{
+                    productId: item.id,
+                    name: item.name,
+                    size: item.size,
+                    quantity: item.quantity,
+                    price: item.price // price per unit
+                }],
+                subtotal: item.price * item.quantity,
+                totalAmount: totalAmount,
+                status: 'Payment Received (Pending Fulfillment)',
+                timestamp: serverTimestamp(),
+                customer_uid: userId 
+            };
+
+            const productsRef = getPublicCollectionRef('products');
+            const productDocRef = doc(productsRef, item.id);
+            
+            try {
+                // Use transaction to ensure stock update and order placement are atomic
+                await runTransaction(db, async (transaction) => {
+                    const productDoc = await transaction.get(productDocRef);
+                    if (!productDoc.exists()) {
+                        throw new Error("Product no longer exists in database.");
+                    }
+                    
+                    const productData = productDoc.data();
+                    const currentStock = productData.stock[item.size] || 0;
+                    
+                    if (currentStock < item.quantity) {
+                        throw new Error(`Insufficient stock for size ${item.size}. Available: ${currentStock}`);
+                    }
+
+                    // 1. Update Stock
+                    const newStock = { ...productData.stock, [item.size]: currentStock - item.quantity };
+                    transaction.update(productDocRef, { stock: newStock });
+
+                    // 2. Place Order
+                    const ordersRef = getPublicCollectionRef('orders');
+                    transaction.set(doc(ordersRef), newOrder); 
+
+                    return true;
+                });
+
+                showMessage("Order Placed!", 
+                    `Thank you, ${newOrder.customerName}! Your order has been confirmed. The full amount is BDT ${totalAmount.toLocaleString('en-US')}, and we have successfully verified your delivery charge payment via Trx ID: ${newOrder.transactionId}. We will contact you at ${newOrder.phone}.`,
+                    false
+                );
+                currentCart = {}; // Clear cart
+                showView('home-view');
+
+            } catch (error) {
+                console.error("Order Transaction Failed:", error);
+                showMessage("Order Failed", `There was an error processing your order. This may be due to low stock or a database issue: ${error.message}`, true);
+            }
+        };
+
+        // --- Admin View Logic ---
+
+        window.handleAdminLogin = async () => {
+            const email = document.getElementById('admin-email').value;
+            const password = document.getElementById('admin-password').value;
+            const loginForm = document.getElementById('admin-login-form');
+
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+                if (user.email === ADMIN_EMAIL) {
+                    showMessage("Success", `Welcome back, Admin!`, false);
+                    loginForm.classList.add('view-hidden');
+                    document.getElementById('admin-content').classList.remove('view-hidden');
+                    renderAdminProducts();
+                } else {
+                    await signOut(auth); // Log out non-admin users immediately
+                    showMessage("Access Denied", "Your account does not have administrator privileges.", true);
+                }
+            } catch (error) {
+                console.error("Admin Login Failed:", error);
+                showMessage("Login Failed", "Invalid Admin Email or Password. Remember to create this user in Firebase Auth console first.", true);
+            }
+        };
+
+        window.handleAdminLogout = async () => {
+            try {
+                await signOut(auth);
+                const loginForm = document.getElementById('admin-login-form');
+                loginForm.classList.remove('view-hidden');
+                document.getElementById('admin-content').classList.add('view-hidden');
+                showView('home-view');
+                // Re-authenticate as anonymous user
+                await signInAnonymously(auth);
+            } catch (error) {
+                console.error("Logout Failed:", error);
+                showMessage("Error", "Could not log out properly.", true);
+            }
+        };
         
-        if (!selectedSize) { alert('Please select a size.'); return; }
-        addToCart(product, selectedSize, selectedQuantity);
-      });
-    }
+        window.showAdminView = () => {
+            const isAdmin = auth.currentUser?.email === ADMIN_EMAIL;
+            
+            document.getElementById('admin-login-form').classList.toggle('view-hidden', isAdmin);
+            document.getElementById('admin-content').classList.toggle('view-hidden', !isAdmin);
 
-    // --- Checkout Logic (Client) ---
-    checkoutForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      if (cart.length === 0) { alert("Your cart is empty."); return; }
-      
-      const deliveryLocation = deliveryLocationSelect.value;
-      if (!deliveryLocation) { alert("Please select a delivery location."); return; }
+            if (isAdmin) {
+                renderAdminProducts();
+                document.getElementById('admin-email-field').textContent = auth.currentUser.email;
+            }
+            showView('admin-view');
+        };
 
-      const customerData = {
-        name: document.getElementById('customer-name').value,
-        phone: document.getElementById('customer-phone').value,
-        address: document.getElementById('customer-address').value,
-        deliveryLocation: deliveryLocationSelect.options[deliveryLocationSelect.selectedIndex].text,
-        bKashTrxId: document.getElementById('bkash-trx-id').value
-      };
+        // --- Admin Product Management ---
 
-      const orderItems = cart.map(item => ({
-        id: item.id, name: item.name, size: item.size, quantity: item.quantity, price: item.price
-      }));
-      
-      const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-      
-      let deliveryCharge = 0;
-      if (deliveryLocation === 'inside_dhaka') { deliveryCharge = 110; } 
-      else if (deliveryLocation === 'outside_dhaka') { deliveryCharge = 130; }
-      const total = subtotal + deliveryCharge;
-      
-      const orderData = {
-        customer: customerData, items: orderItems, subtotal: subtotal, deliveryCharge: deliveryCharge,
-        total: total, codAmount: subtotal, prepaidAmount: deliveryCharge,
-      };
+        window.renderAdminProducts = () => {
+            const container = document.getElementById('admin-product-list');
+            if (!container) return;
+            
+            let listHTML = `<div class="space-y-4">`;
 
-      // Send order data to the server API
-      await sendOrder(orderData);
-    });
+            Object.values(products).forEach(p => {
+                const stockSummary = Object.entries(p.stock || {}).map(([s, q]) => `${s}: ${q}`).join(', ');
+                listHTML += `
+                    <div class="p-4 border rounded-lg flex flex-col md:flex-row justify-between items-start md:items-center bg-gray-50">
+                        <div class="flex-grow">
+                            <h4 class="font-bold text-lg">${p.name} <span class="text-sm text-gray-500">(ID: ${p.id.substring(0, 8)}...)</span></h4>
+                            <p class="text-sm text-gray-600">Price: BDT ${p.price.toLocaleString('en-US')}</p>
+                            <p class="text-sm text-gray-600">Stock: ${stockSummary || 'N/A'}</p>
+                        </div>
+                        <div class="flex space-x-2 mt-2 md:mt-0">
+                            <button onclick="editProduct('${p.id}')" class="text-sm px-3 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600">Edit</button>
+                            <button onclick="deleteProduct('${p.id}')" class="text-sm px-3 py-1 bg-red-500 text-white rounded-md hover:bg-red-600">Delete</button>
+                        </div>
+                    </div>
+                `;
+            });
+            listHTML += `</div>`;
+            container.innerHTML = listHTML;
+            renderAdminOrders();
+        };
+
+        window.handleAddEditProduct = async (event) => {
+            event.preventDefault();
+            const form = event.target;
+            const productId = form.dataset.productId;
+
+            const name = form.name.value;
+            const description = form.description.value;
+            const price = parseFloat(form.price.value);
+            const images = form.images.value.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+
+            // Parse Stock/Size data from hidden field
+            const stockArray = form.querySelector('[name="stockData"]').value.split('|').filter(s => s);
+            const stockMap = {};
+            stockArray.forEach(item => {
+                const [size, qty] = item.split(':');
+                if (size && !isNaN(parseInt(qty, 10))) {
+                    stockMap[size.trim()] = parseInt(qty, 10);
+                }
+            });
+
+            const productData = { name, description, price, images, stock: stockMap };
+            const productsRef = getPublicCollectionRef('products');
+
+            try {
+                if (productId) {
+                    await updateDoc(doc(productsRef, productId), productData);
+                    showMessage("Success", `Product "${name}" updated successfully!`);
+                } else {
+                    await addDoc(productsRef, productData);
+                    showMessage("Success", `Product "${name}" added successfully!`);
+                }
+                
+                form.reset();
+                setupAddEditForm(null); // Reset form for adding new
+            } catch (error) {
+                console.error("Product Save Error:", error);
+                showMessage("Error", "Failed to save product: " + error.message, true);
+            }
+        };
+
+        window.editProduct = (productId) => {
+            const p = products[productId];
+            if (!p) return;
+            setupAddEditForm(p);
+            document.getElementById('admin-tab-products').click(); // Switch to the product tab
+        };
+
+        window.deleteProduct = async (productId) => {
+            if (!confirm("Are you sure you want to delete this product? This action cannot be undone.")) return;
+
+            try {
+                const productsRef = getPublicCollectionRef('products');
+                await deleteDoc(doc(productsRef, productId));
+                showMessage("Success", "Product deleted successfully.");
+            } catch (error) {
+                console.error("Delete Error:", error);
+                showMessage("Error", "Failed to delete product: " + error.message, true);
+            }
+        };
+
+        // --- Admin Product Form Helper (Size/Stock Management) ---
+
+        const setupAddEditForm = (product = null) => {
+            const form = document.getElementById('add-edit-product-form');
+            const stockContainer = document.getElementById('stock-size-container');
+            const hiddenStockInput = form.querySelector('[name="stockData"]');
+            
+            form.reset();
+            form.dataset.productId = product?.id || '';
+            document.getElementById('form-title').textContent = product ? 'Edit Product' : 'Add New Product';
+            
+            if (product) {
+                form.name.value = product.name;
+                form.description.value = product.description;
+                form.price.value = product.price;
+                form.images.value = product.images?.join('\n') || '';
+            }
+
+            // Function to render/update stock inputs
+            const updateStockInputs = () => {
+                const initialStockMap = product ? product.stock : {};
+                const currentStockMap = {};
+                
+                // Read current values from displayed inputs
+                const currentInputs = stockContainer.querySelectorAll('.stock-size-group');
+                currentInputs.forEach(group => {
+                    const size = group.querySelector('.size-input').value.trim();
+                    const qty = parseInt(group.querySelector('.qty-input').value, 10);
+                    if (size && !isNaN(qty)) {
+                        currentStockMap[size] = qty;
+                    }
+                });
+
+                // Use existing values or initial product values
+                const mapToRender = product ? product.stock : currentStockMap;
+
+                stockContainer.innerHTML = Object.entries(mapToRender).map(([size, qty]) => `
+                    <div class="stock-size-group flex space-x-2 mb-2">
+                        <input type="text" placeholder="Size (e.g., S)" value="${size}" class="size-input p-2 border border-gray-300 rounded-lg w-1/3">
+                        <input type="number" placeholder="Stock Qty" value="${qty}" min="0" class="qty-input p-2 border border-gray-300 rounded-lg w-1/3">
+                        <button type="button" onclick="removeStockGroup(this)" class="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 w-1/3">Remove</button>
+                    </div>
+                `).join('');
+
+                // Add an empty row if adding a new product or if the form is empty
+                if (Object.keys(mapToRender).length === 0 || !product) {
+                     stockContainer.insertAdjacentHTML('beforeend', `
+                        <div class="stock-size-group flex space-x-2 mb-2">
+                            <input type="text" placeholder="Size (e.g., S)" class="size-input p-2 border border-gray-300 rounded-lg w-1/3">
+                            <input type="number" placeholder="Stock Qty" min="0" value="0" class="qty-input p-2 border border-gray-300 rounded-lg w-1/3">
+                            <button type="button" onclick="removeStockGroup(this)" class="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 w-1/3">Remove</button>
+                        </div>
+                    `);
+                }
+                updateHiddenStock();
+            };
+            
+            window.addStockGroup = () => {
+                stockContainer.insertAdjacentHTML('beforeend', `
+                    <div class="stock-size-group flex space-x-2 mb-2">
+                        <input type="text" placeholder="Size (e.g., M)" class="size-input p-2 border border-gray-300 rounded-lg w-1/3">
+                        <input type="number" placeholder="Stock Qty" min="0" value="0" class="qty-input p-2 border border-gray-300 rounded-lg w-1/3">
+                        <button type="button" onclick="removeStockGroup(this)" class="p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 w-1/3">Remove</button>
+                    </div>
+                `);
+            };
+
+            window.removeStockGroup = (button) => {
+                button.closest('.stock-size-group').remove();
+                updateHiddenStock();
+            };
+
+            window.updateHiddenStock = () => {
+                let stockData = [];
+                stockContainer.querySelectorAll('.stock-size-group').forEach(group => {
+                    const size = group.querySelector('.size-input').value.trim();
+                    const qty = parseInt(group.querySelector('.qty-input').value, 10);
+                    if (size && !isNaN(qty)) {
+                        stockData.push(`${size}:${qty}`);
+                    }
+                });
+                hiddenStockInput.value = stockData.join('|');
+            };
+
+            // Attach change listener to update hidden field on any input change
+            stockContainer.oninput = updateHiddenStock;
+            
+            updateStockInputs(); // Initial render
+        };
+
+        // --- Admin Order Management ---
+        window.renderAdminOrders = () => {
+            const container = document.getElementById('admin-order-list');
+            if (!container) return;
+            
+            if (allOrders.length === 0) {
+                container.innerHTML = `<p class="text-center text-gray-500 py-4">No orders received yet.</p>`;
+                return;
+            }
+
+            container.innerHTML = allOrders.map(order => {
+                const timestamp = order.timestamp?.toDate ? order.timestamp.toDate().toLocaleString() : 'N/A';
+                const itemsList = order.items.map(i => `${i.name} (Size: ${i.size}, Qty: ${i.quantity})`).join('<br>');
+                
+                return `
+                    <div class="p-4 border rounded-lg bg-white shadow-sm hover:shadow-md transition duration-200">
+                        <div class="flex justify-between items-start mb-2 border-b pb-2">
+                            <h4 class="font-bold text-xl text-var(--primary)">Order #${order.id.substring(0, 8)}...</h4>
+                            <span class="text-sm font-semibold p-1 rounded-full ${order.status.includes('Pending') ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'}">
+                                ${order.status}
+                            </span>
+                        </div>
+                        <p class="text-sm mb-1"><strong>Customer:</strong> ${order.customerName} (${order.phone})</p>
+                        <p class="text-sm mb-1"><strong>Address:</strong> ${order.address}, ${order.location}</p>
+                        <p class="text-sm mb-1"><strong>Trx ID:</strong> <span class="font-mono text-red-600">${order.transactionId}</span></p>
+                        <p class="text-sm mb-2"><strong>Items:</strong> <br><span class="ml-4">${itemsList}</span></p>
+                        <p class="text-md font-bold text-gray-700">Total: BDT ${order.totalAmount.toLocaleString('en-US')} (Delivery: ${order.deliveryCharge} BDT)</p>
+                        <p class="text-xs text-gray-400 mt-2">Time: ${timestamp}</p>
+                    </div>
+                `;
+            }).join('');
+        };
+        
+        // --- Initialize App ---
+        initFirebase();
+        
+    </script>
+
+    <!-- Modal/Message Box Structure -->
+    <div id="message-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-2xl max-w-sm w-full mx-4 overflow-hidden">
+            <div id="modal-header" class="p-4 text-white font-bold text-lg">
+                <span id="modal-title">Message</span>
+            </div>
+            <div class="p-6">
+                <p id="modal-message" class="text-gray-700 mb-6"></p>
+                <button onclick="document.getElementById('message-modal').classList.add('hidden')" class="w-full py-2 btn-primary rounded-lg font-semibold">Close</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- HEADER/NAVBAR -->
+    <header class="bg-white shadow-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto p-4 flex justify-between items-center">
+            <div onclick="showView('home-view')" class="text-2xl font-black cursor-pointer text-var(--primary)">
+                Trendy Jamakapor
+            </div>
+            <nav class="flex items-center space-x-4">
+                <a href="tel:+8801401603157" class="text-gray-700 hover:text-var(--primary) text-sm font-medium hidden sm:inline">
+                    +8801401603157
+                </a>
+                <span onclick="showAdminView()" class="admin-link text-sm font-medium">
+                    Admin
+                </span>
+                <!-- Cart/Checkout Link - Placeholder, functional only via "Buy Now" -->
+                <button onclick="if(Object.keys(currentCart).length > 0) { renderCheckout(); } else { showMessage('Cart Empty', 'Please select a product and use the "Buy Now" button.'); showView('home-view'); }" 
+                        class="p-2 bg-var(--primary) text-white rounded-full hover:bg-red-700 relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l3.24 10.8A2 2 0 0010.5 16h8a2 2 0 001.9-2.3L21.3 6H6" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 21a1 1 0 100-2 1 1 0 000 2zM7 21a1 1 0 100-2 1 1 0 000 2z" />
+                    </svg>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-4 pt-8">
+
+        <!-- 1. HOME VIEW -->
+        <div id="home-view" class="app-view">
+            <h1 class="text-4xl font-extrabold text-center mb-10 text-gray-800">New Arrivals</h1>
+            <div id="product-list" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <!-- Products will be rendered here by JavaScript -->
+                <p class="text-center col-span-full py-12 text-gray-500">Loading products...</p>
+            </div>
+        </div>
+
+        <!-- 2. PRODUCT DETAIL VIEW -->
+        <div id="product-view" class="app-view view-hidden">
+            <!-- Product details and purchase form will be rendered here by JavaScript -->
+        </div>
+
+        <!-- 3. CHECKOUT VIEW -->
+        <div id="checkout-view" class="app-view view-hidden">
+             <!-- Checkout form will be rendered here by JavaScript -->
+        </div>
+
+        <!-- 4. ADMIN VIEW -->
+        <div id="admin-view" class="app-view view-hidden">
+            <h1 class="text-4xl font-extrabold text-center mb-10 text-var(--primary)">Admin Panel</h1>
+            
+            <!-- Admin Login Form -->
+            <div id="admin-login-form" class="max-w-md mx-auto admin-card">
+                <h2 class="text-2xl font-bold mb-6 text-center">Admin Sign In</h2>
+                <form onsubmit="event.preventDefault(); handleAdminLogin()">
+                    <div class="space-y-4">
+                        <div>
+                            <label for="admin-email" class="block text-sm font-medium text-gray-700">Email</label>
+                            <!-- UPDATED DEFAULT VALUE -->
+                            <input type="email" id="admin-email" value="rabby420bd@gmail.com" required class="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-var(--primary) focus:border-var(--primary)">
+                        </div>
+                        <div>
+                            <label for="admin-password" class="block text-sm font-medium text-gray-700">Password</label>
+                            <!-- UPDATED DEFAULT VALUE -->
+                            <input type="password" id="admin-password" value="trendy123" required class="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-var(--primary) focus:border-var(--primary)">
+                        </div>
+                        <button type="submit" class="w-full py-3 btn-primary rounded-lg font-semibold">Login</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Admin Content (Product/Order Management) -->
+            <div id="admin-content" class="view-hidden">
+                <div class="flex justify-between items-center mb-6">
+                    <p class="text-md font-medium">Logged in as: <span id="admin-email-field" class="font-bold"></span></p>
+                    <button onclick="handleAdminLogout()" class="text-sm px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Logout</button>
+                </div>
+                
+                <!-- Tabs -->
+                <div class="border-b border-gray-200 mb-6">
+                    <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+                        <button id="admin-tab-products" onclick="switchAdminTab('products')" class="tab-button border-b-2 py-3 px-1 text-sm font-medium whitespace-nowrap border-var(--primary) text-var(--primary)">
+                            Product Management
+                        </button>
+                        <button id="admin-tab-orders" onclick="switchAdminTab('orders')" class="tab-button border-b-2 py-3 px-1 text-sm font-medium whitespace-nowrap border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700">
+                            Order History
+                        </button>
+                    </nav>
+                </div>
+
+                <!-- Product Management Tab -->
+                <div id="admin-tab-content-products" class="admin-tab-content">
+                    <div class="grid lg:grid-cols-2 gap-8">
+                        <!-- Add/Edit Form -->
+                        <div class="admin-card">
+                            <h2 id="form-title" class="text-2xl font-bold mb-6">Add New Product</h2>
+                            <form id="add-edit-product-form" onsubmit="handleAddEditProduct(event)">
+                                <input type="hidden" name="stockData" value="">
+
+                                <div class="space-y-4">
+                                    <div>
+                                        <label for="name" class="block text-sm font-medium text-gray-700">Product Name</label>
+                                        <input type="text" name="name" required class="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm">
+                                    </div>
+                                    <div>
+                                        <label for="price" class="block text-sm font-medium text-gray-700">Price (BDT)</label>
+                                        <input type="number" name="price" required min="1" class="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm">
+                                    </div>
+                                    <div>
+                                        <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                                        <textarea name="description" rows="3" required class="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm"></textarea>
+                                    </div>
+                                    <div>
+                                        <label for="images" class="block text-sm font-medium text-gray-700">Image URLs (One per line)</label>
+                                        <textarea name="images" rows="4" placeholder="https://image1.com/product.jpg" required class="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm"></textarea>
+                                    </div>
+                                    
+                                    <!-- Stock & Size Management -->
+                                    <h3 class="text-lg font-semibold pt-2 border-t mt-4">Stock & Size Management</h3>
+                                    <div id="stock-size-container">
+                                        <!-- Stock inputs rendered by JS -->
+                                    </div>
+                                    <button type="button" onclick="addStockGroup()" class="py-2 px-4 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm">Add Size/Stock</button>
+                                    
+                                    <div class="flex space-x-4 pt-4">
+                                        <button type="submit" class="w-full py-3 btn-primary rounded-lg font-semibold">Save Product</button>
+                                        <button type="button" onclick="setupAddEditForm(null)" class="w-1/3 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300">New/Clear</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <!-- Product List -->
+                        <div class="admin-card">
+                            <h2 class="text-2xl font-bold mb-6">Current Inventory</h2>
+                            <div id="admin-product-list" class="space-y-4">
+                                <!-- Product list rendered by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Order History Tab -->
+                <div id="admin-tab-content-orders" class="admin-tab-content view-hidden">
+                    <div id="admin-order-list" class="space-y-6">
+                        <!-- Order list rendered by JS -->
+                    </div>
+                </div>
+            </div>
+            <script>
+                // Tab switching logic for Admin Panel
+                function switchAdminTab(tabName) {
+                    document.querySelectorAll('.admin-tab-content').forEach(el => el.classList.add('view-hidden'));
+                    document.getElementById(`admin-tab-content-${tabName}`).classList.remove('view-hidden');
+                    
+                    document.querySelectorAll('.tab-button').forEach(btn => {
+                        btn.classList.remove('border-var(--primary)', 'text-var(--primary)');
+                        btn.classList.add('border-transparent', 'text-gray-500', 'hover:border-gray-300', 'hover:text-gray-700');
+                    });
+                    
+                    const activeBtn = document.getElementById(`admin-tab-${tabName}`);
+                    activeBtn.classList.add('border-var(--primary)', 'text-var(--primary)');
+                    activeBtn.classList.remove('border-transparent', 'text-gray-500', 'hover:border-gray-300', 'hover:text-gray-700');
+                }
+                // Initial setup for the product form
+                window.onload = () => {
+                    // Check if the initial function is available (it's inside the module script)
+                    if (typeof setupAddEditForm === 'function') {
+                        setupAddEditForm(null); 
+                    }
+                }
+            </script>
+        </div>
+
+    </main>
     
-    // --- Admin Logic (Client) ---
-    adminLoginForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const password = document.getElementById('admin-password').value;
-      if (password === 'admin123') { // Simple local demo password
-        isAdmin = true;
-        showPage('admin-panel-page');
-        adminLoginForm.reset();
-        adminLoginError.style.display = 'none';
-        fetchAndRenderAdminOrders();
-        renderAdminProductList();
-      } else {
-        isAdmin = false;
-        adminLoginError.style.display = 'block';
-      }
-    });
-
-    async function fetchAndRenderAdminOrders() {
-      ordersList.innerHTML = '<p class="text-gray-600">Loading orders from server...</p>';
-      const orders = await fetchOrders();
-      
-      if (orders.length === 0) {
-        ordersList.innerHTML = '<p class="text-gray-600">No orders found.</p>';
-        return;
-      }
-      
-      allOrders = orders;
-      
-      let ordersHtml = '';
-      
-      allOrders.forEach(order => {
-        const itemsHtml = order.items.map(item => `
-          <li class="flex justify-between text-sm">
-            <span>${item.name} (Size: ${item.size}, Qty: ${item.quantity})</span>
-            <span class="font-medium">${formatCurrency(item.price * item.quantity)}</span>
-          </li>
-        `).join('');
-
-        const orderDate = new Date(order.createdAt).toLocaleString();
-        
-        const statusOptionsHtml = ORDER_STATUSES.map(status => `
-          <option value="${status}" ${order.status === status ? 'selected' : ''}>
-            ${status}
-          </option>
-        `).join('');
-
-        ordersHtml += `
-          <div class="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-            <div class="flex justify-between items-start mb-4">
-              <div>
-                <h3 class="text-xl font-semibold text-gray-800">
-                  Order ID: <span class="text-blue-600">${order.publicOrderId || order.id}</span>
-                </h3>
-                <p class="text-sm text-gray-500">Placed on: ${orderDate}</p>
-              </div>
-              <span class="px-3 py-1 rounded-full text-sm font-medium ${getStatusBadgeClass(order.status)}">
-                ${order.status}
-              </span>
+    <!-- FOOTER -->
+    <footer class="mt-12 bg-gray-800 text-white p-6">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center text-center md:text-left space-y-4 md:space-y-0">
+            <div class="text-sm">
+                <p>&copy; ${new Date().getFullYear()} Trendy Jamakapor. All rights reserved.</p>
+                <p>Designed with <span class="text-red-400">❤</span> for Bangladesh.</p>
             </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h4 class="text-lg font-medium text-gray-700 mb-2">Customer Details</h4>
-                <ul class="space-y-1 text-gray-600">
-                  <li><strong>Name:</strong> ${order.customer.name}</li>
-                  <li><strong>Phone:</strong> ${order.customer.phone}</li>
-                  <li><strong>Address:</strong> ${order.customer.address}</li>
-                  <li><strong>Delivery:</strong> ${order.customer.deliveryLocation || 'N/A'}</li>
-                  <li class="mt-2"><strong>bKash TrxID:</strong> 
-                    <span class="font-semibold text-blue-600">${order.customer.bKashTrxId}</span>
-                  </li>
-                </ul>
-              </div>
-              
-              <div>
-                <h4 class="text-lg font-medium text-gray-700 mb-2">Order Items</h4>
-                <ul class="space-y-2 mb-4">
-                  ${itemsHtml}
-                </ul>
-                <div class="border-t border-gray-200 pt-3 space-y-1">
-                  <div class="flex justify-between text-base font-medium">
-                    <span>Subtotal (COD)</span>
-                    <span>${order.subtotal ? formatCurrency(order.subtotal) : 'N/A'}</span>
-                  </div>
-                  <div class="flex justify-between text-base font-medium">
-                    <span>Delivery (bKash)</span>
-                    <span>${order.deliveryCharge ? formatCurrency(order.deliveryCharge) : 'N/A'}</span>
-                  </div>
-                  <div class="flex justify-between text-lg font-bold">
-                    <span>Total Value</span>
-                    <span>${formatCurrency(order.total)}</span>
-                  </div>
-                </div>
-              </div>
+            <div class="text-sm space-y-1">
+                <p>Email: <a href="mailto:rabby420bd@gmail.com" class="hover:text-var(--secondary)">rabby420bd@gmail.com</a></p>
+                <p>Phone: <a href="tel:+8801401603157" class="hover:text-var(--secondary)">+8801401603157</a></p>
+                <p>Facebook: <a href="www.facebook.com/trendyjamakapor" target="_blank" class="hover:text-var(--secondary)">www.facebook.com/trendyjamakapor</a></p>
             </div>
-            
-            <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
-              <label for="status-${order.id}" class="text-sm font-medium text-gray-700">Update Status:</label>
-              <select id="status-${order.id}" class="order-status-select bg-white border border-gray-300 rounded-md shadow-sm py-2 px-3 text-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                      data-id="${order.id}" ${order.status === 'Delivered' ? 'disabled' : ''}>
-                ${statusOptionsHtml}
-              </select>
-            </div>
-          </div>
-        `;
-      });
-      ordersList.innerHTML = ordersHtml;
-      addOrderStatusListeners();
-    }
-
-    function addOrderStatusListeners() {
-        document.querySelectorAll('.order-status-select').forEach(select => {
-            select.addEventListener('change', (e) => {
-                const orderId = e.target.dataset.id;
-                const newStatus = e.target.value;
-                e.target.disabled = true; // Disable while API call is ongoing
-                updateOrderStatusApi(orderId, newStatus);
-            });
-        });
-    }
-
-    // --- Product Management (Client) ---
-    function renderAdminProductList() {
-      // Uses MOCK_PRODUCTS which is populated via fetchProducts()
-      if (MOCK_PRODUCTS.length === 0) {
-        adminProductList.innerHTML = '<p class="text-gray-600">No products created yet.</p>';
-        return;
-      }
-      
-      let productsHtml = '';
-      MOCK_PRODUCTS.forEach(product => {
-        productsHtml += `
-          <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-            <div class="flex items-center space-x-4">
-              <img src="${product.images && product.images.length > 0 ? product.images[0] : 'https://placehold.co/60x60/e2e8f0/94a3b8?text=Img'}" 
-                   alt="${product.name}" class="w-16 h-16 object-cover rounded-md">
-              <div>
-                <h4 class="text-base font-semibold text-gray-800">${product.name}</h4>
-                <p class="text-sm text-gray-600">${formatCurrency(product.price)}</p>
-              </div>
-            </div>
-            <div class="flex space-x-2">
-              <button class="admin-edit-product p-2 text-blue-600 hover:text-blue-800" data-id="${product.id}">
-                <i data-lucide="edit-2" class="w-5 h-5"></i>
-              </button>
-              <button class="admin-delete-product p-2 text-red-500 hover:text-red-700" data-id="${product.id}">
-                <i data-lucide="trash-2" class="w-5 h-5"></i>
-              </button>
-            </div>
-          </div>
-        `;
-      });
-      adminProductList.innerHTML = productsHtml;
-      
-      if (typeof lucide !== 'undefined') { lucide.createIcons(); }
-      
-      document.querySelectorAll('.admin-edit-product').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const id = e.currentTarget.dataset.id;
-          const product = MOCK_PRODUCTS.find(p => p.id === id);
-          if (product) { populateProductForm(product); }
-        });
-      });
-      
-      document.querySelectorAll('.admin-delete-product').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const id = e.currentTarget.dataset.id;
-          deleteProductApi(id);
-        });
-      });
-    }
-
-    function populateProductForm(product) {
-      productFormTitle.textContent = 'Edit Product';
-      document.getElementById('product-id').value = product.id;
-      document.getElementById('product-name').value = product.name;
-      document.getElementById('product-price').value = product.price;
-      document.getElementById('product-original-price').value = product.originalPrice || '';
-      document.getElementById('product-description').value = product.description;
-      document.getElementById('product-images').value = product.images ? product.images.join(', ') : '';
-      document.getElementById('product-sizes').value = product.sizes ? product.sizes.join(', ') : '';
-      document.getElementById('product-stock').value = product.stock ? JSON.stringify(product.stock) : '{}';
-      window.scrollTo(0, 0);
-    }
-
-    function clearProductForm() {
-      productFormTitle.textContent = 'Add New Product';
-      productForm.reset();
-      document.getElementById('product-id').value = '';
-    }
-    document.getElementById('clear-product-form').addEventListener('click', clearProductForm);
-
-    productForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      let stockData = {};
-      try { stockData = JSON.parse(document.getElementById('product-stock').value); } 
-      catch (error) { alert("Invalid JSON format for Stock. Please correct it."); return; }
-      
-      const originalPriceValue = document.getElementById('product-original-price').value;
-      const productId = document.getElementById('product-id').value;
-      const isNew = !productId;
-      
-      const productData = {
-        name: document.getElementById('product-name').value,
-        price: parseFloat(document.getElementById('product-price').value),
-        originalPrice: originalPriceValue ? parseFloat(originalPriceValue) : null,
-        description: document.getElementById('product-description').value,
-        images: document.getElementById('product-images').value.split(',').map(url => url.trim()).filter(url => url),
-        sizes: document.getElementById('product-sizes').value.split(',').map(s => s.trim().toUpperCase()).filter(s => s),
-        stock: stockData,
-        ...(productId && { id: productId }) 
-      };
-      
-      updateProduct(productData, isNew);
-    });
-
-    // --- Order Tracking Logic (Client) ---
-    trackOrderForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const searchValue = document.getElementById('track-input').value.trim();
-
-      if (!searchValue) {
-        trackOrderResults.innerHTML = '<p class="text-red-500">Please enter a Phone Number or Order ID.</p>';
-        return;
-      }
-      
-      trackOrderButton.disabled = true;
-      trackOrderButton.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 mr-2 animate-spin"></i> Tracking...';
-      if (typeof lucide !== 'undefined') { lucide.createIcons(); }
-
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/track?query=${encodeURIComponent(searchValue)}`);
-        const result = await response.json();
-
-        if (!response.ok || result.length === 0) {
-          trackOrderResults.innerHTML = '<p class="text-red-500 text-center">No orders found. Please check your details and try again.</p>';
-        } else {
-          let resultsHtml = '';
-          result.forEach(order => { resultsHtml += renderTrackingResult(order); });
-          trackOrderResults.innerHTML = resultsHtml;
-          if (typeof lucide !== 'undefined') { lucide.createIcons(); }
-        }
-      } catch (error) {
-        console.error('Error tracking order:', error);
-        trackOrderResults.innerHTML = '<p class="text-red-500 text-center">An error occurred while tracking your order. Check if the server is running.</p>';
-      } finally {
-        trackOrderButton.disabled = false;
-        trackOrderButton.innerHTML = '<i data-lucide="search" class="w-5 h-5 mr-2"></i> Track Order';
-        if (typeof lucide !== 'undefined') { lucide.createIcons(); }
-      }
-    });
-
-    /**
-     * Renders the visual tracking results for a *single* found order
-     */
-    function renderTrackingResult(order) {
-      let currentStepIndex = ORDER_STATUSES.findIndex(step => step === order.status);
-      if (currentStepIndex === -1) currentStepIndex = 0;
-      
-      let stepsHtml = '';
-      const trackingSteps = [
-        { status: 'Pending', icon: 'clock' },
-        { status: 'Confirmed', icon: 'check-circle' },
-        { status: 'Packed', icon: 'package' },
-        { status: 'Shipped', icon: 'truck' },
-        { status: 'In Transit', icon: 'route' },
-        { status: 'Out for Delivery', icon: 'box' },
-        { status: 'Delivered', icon: 'home' }
-      ];
-      
-      trackingSteps.forEach((step, index) => {
-        let stepClass = 'track-step';
-        if (index < currentStepIndex) {
-          stepClass += ' completed';
-        } else if (index === currentStepIndex) {
-          stepClass += ' active';
-        }
-        
-        stepsHtml += `
-          <div class="${stepClass}">
-            <div class="track-step-icon">
-              <i data-lucide="${index < currentStepIndex ? 'check' : step.icon}"></i>
-            </div>
-            <div class="track-step-label">${step.status}</div>
-          </div>
-        `;
-      });
-      
-      const progressPercentage = (currentStepIndex / (ORDER_STATUSES.length - 1)) * 100;
-
-      return `
-        <div class="border border-gray-200 rounded-lg p-6 mb-6">
-          <h3 class="text-xl font-semibold text-gray-800 mb-2">Order ID: ${order.publicOrderId || 'N/A'}</h3>
-          <p class="text-gray-600 mb-4">Your order is currently ${order.status}.</p>
-          
-          <div class="track-stepper">
-            <!-- Background line -->
-            <!-- Progress line -->
-            <div class="track-stepper-line" style="width: ${progressPercentage}%;"></div>
-            ${stepsHtml}
-          </div>
         </div>
-      `;
-    }
+    </footer>
 
-    // --- App Initialization ---
-    async function initApp() {
-      await fetchProducts(); 
-      updateCartView();
-      if (typeof lucide !== 'undefined') { lucide.createIcons(); }
-      if (!document.querySelector('.page.active')) { showPage('home-page'); }
-    }
-
-    // --- Start the App ---
-    window.onload = initApp;
-
-  </script>
 </body>
-
 </html>
 
