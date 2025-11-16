@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trendy Jamakapor - Fashion E-commerce</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #8a3324; /* Deep Burgundy/Red for fashion brand */
+            --secondary: #fce7f3; /* Light Pink */
+            --text-dark: #1f2937;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9fafb;
+            color: var(--text-dark);
+        }
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            transition: all 0.2s;
+        }
+        .btn-primary:hover {
+            background-color: #6d251a;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .admin-link {
+            cursor: pointer;
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        .view-hidden { display: none; }
+        .product-card, .admin-card, .checkout-card {
+            background: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+        }
+        /* Custom scrollbar for gallery */
+        .image-gallery::-webkit-scrollbar {
+            display: none; /* Hide scrollbar for WebKit browsers */
+        }
+        .image-gallery {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Firebase SDK Imports and Initialization -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, query, addDoc, getDocs, updateDoc, deleteDoc, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        
+        // Use Debug level for better visibility during development
+        setLogLevel('Debug');
+
+        // ====================================================================================
+        // --- VERCEL DEPLOYMENT CONFIGURATION (UPDATED WITH USER'S VALUES) ---
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyBPM0unGvJC14lG85nmGmLC1X58521-o-s",
+            authDomain: "trendy-jamakapor.firebaseapp.com",
+            projectId: "trendy-jamakapor",
+            storageBucket: "trendy-jamakapor.firebasestorage.app",
+            messagingSenderId: "154302367160",
+            appId: "1:154302367160:web:ee0f6064ef82952ff6bb4d",
+            measurementId: "G-PFW70YB09X" // Ignored by our core logic, but included for completeness
+        };
+        
+        // This MUST match the path used in your Firestore Security Rules (Part 1, Step 3).
+        const appId = 'trendy-jamakapor-vercel'; 
+
+        // --- GLOBAL ADMIN EMAIL CONSTANT ---
+        const ADMIN_EMAIL = 'rabby420bd@gmail.com'; 
+        // ====================================================================================
+
+
+        let app, db, auth, userId = null;
+        let isAuthReady = false;
+        let products = {};
+        let currentProduct = null;
+        let currentCart = {}; // {productId: {name, price, size, quantity, stockMap}}
+        let allOrders = [];
+
+        // --- Utility Functions ---
+
+        // Display custom modal/message box (instead of alert/confirm)
+        window.showMessage = (title, message, isError = false) => {
+            const modal = document.getElementById('message-modal');
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+            const header = document.getElementById('modal-header');
+            if (isError) {
+                header.classList.remove('bg-green-500');
+                header.classList.add('bg-red-500');
+            } else {
+                header.classList.remove('bg-red-500');
+                header.classList.add('bg-green-500');
+            }
+            modal.classList.remove('hidden');
+        };
+
+        window.showView = (viewId) => {
+            document.querySelectorAll('.app-view').forEach(view => {
+                view.classList.add('view-hidden');
+            });
+            document.getElementById(viewId).classList.remove('view-hidden');
+            window.scrollTo(0, 0); // Scroll to top on view change
+        };
+
+        // --- Firebase Initialization and Authentication ---
+
+        const initFirebase = async () => {
+            try {
+                // Since user provided config, assume it's correct.
+                
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                await setPersistence(auth, browserSessionPersistence);
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        console.log("Firebase Auth State Changed. User ID:", userId);
+
+                        if (!isAuthReady) {
+                            // First time sign-in check
+                            isAuthReady = true;
+                            // Set up public data listeners
+                            setupPublicDataListeners();
+                            if(document.getElementById('admin-view').classList.contains('view-hidden')) {
+                                showView('home-view'); // Default view
+                            }
+                        }
+                    } else {
+                        userId = null;
+                        if (!isAuthReady) {
+                             // Handle initial sign-in for anonymous user (no custom token needed on Vercel)
+                            await signInAnonymously(auth);
+                        } else {
+                            // User logged out
+                            isAuthReady = true;
+                            showView('home-view');
+                        }
+                    }
+                });
+            } catch (error) {
+                console.error("Firebase Initialization Error:", error);
+                showMessage("Setup Error", "Failed to initialize the application. Please check console for details.", true);
+            }
+        };
+
+        // --- Firestore Listeners (Public Data) ---
+        // Path uses the fixed 'appId' for Vercel: /artifacts/trendy-jamakapor-vercel/public/data/{collection}
+        const getPublicCollectionRef = (name) => collection(db, 'artifacts', appId, 'public', 'data', name);
+
+        const setupPublicDataListeners = () => {
+            // 1. Products Listener
+            const productsQuery = query(getPublicCollectionRef('products'));
+            onSnapshot(productsQuery, (snapshot) => {
+                products = {};
+                snapshot.forEach(doc => {
+                    products[doc.id] = { id: doc.id, ...doc.data() };
+                });
+                console.log("Products updated:", Object.keys(products).length, "items.");
+                renderProducts(); // Update Home View
+                // If on product page, re-render
+                if (currentProduct) {
+                    currentProduct = products[currentProduct.id];
+                    if (currentProduct) showProductDetail(currentProduct.id);
+                }
+            }, (error) => console.error("Error fetching products:", error));
+
+            // 2. Orders Listener (Only relevant for Admin)
+            const ordersQuery = query(getPublicCollectionRef('orders'));
+            onSnapshot(ordersQuery, (snapshot) => {
+                allOrders = [];
+                snapshot.forEach(doc => {
+                    allOrders.push({ id: doc.id, ...doc.data() });
+                });
+                allOrders.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+                console.log("Orders updated:", allOrders.length, "orders.");
+                renderAdminOrders(); // Update Admin View if active
+            }, (error) => console.error("Error fetching orders:", error));
+        };
+
+        // --- Home View Logic ---
+
+        window.renderProducts = () => {
+            const container = document.getElementById('product-list');
+            if (!container) return;
+
+            if (Object.keys(products).length === 0) {
+                container.innerHTML = `<p class="text-center text-gray-500 py-12 col-span-full">No products found. ${auth.currentUser?.email ? 'Go to Admin Panel to add some!' : 'Check back later!'}</p>`;
+                return;
+            }
+
+            container.innerHTML = Object.values(products).map(p => `
+                <div class="product-card flex flex-col cursor-pointer hover:shadow-xl transition duration-300" onclick="showProductDetail('${p.id}')">
+                    <img src="${p.images?.[0] || 'https://placehold.co/400x500/fce7f3/8a3324?text=Trendy+Item'}"
+                         alt="${p.name}" class="w-full h-64 object-cover rounded-t-lg mb-4">
+                    <div class="flex-grow">
+                        <h3 class="text-lg font-semibold truncate mb-1">${p.name}</h3>
+                        <p class="text-xl font-bold text-gray-800">BDT ${p.price.toLocaleString('en-US')}</p>
+                    </div>
+                    <button class="mt-4 w-full py-2 btn-primary rounded-lg text-sm">View Details</button>
+                </div>
+            `).join('');
+        };
+
+        // --- Product Detail View Logic ---
+
+        window.showProductDetail = (productId) => {
+            const p = products[productId];
+            if (!p) {
+                showMessage("Error", "Product not found.", true);
+                showView('home-view');
+                return;
+            }
+            currentProduct = p;
+            
+            const view = document.getElementById('product-view');
+            
+            // Generate Size Options
+            const sizes = Object.keys(p.stock || {}).filter(size => p.stock[size] > 0);
+            const sizeOptions = sizes.length > 0 ? sizes.map(size => `
+                <label class="inline-flex items-center mr-4 mb-2">
+                    <input type="radio" name="productSize" value="${size}"
+                           class="form-radio h-4 w-4 text-pink-600 focus:ring-var(--primary)" required>
+                    <span class="ml-2 text-sm font-medium border border-gray-300 rounded-lg px-3 py-1 hover:bg-gray-50 transition duration-150">${size}</span>
+                </label>
+            `).join('') : '<p class="text-red-500 font-semibold">Out of Stock</p>';
+
+            // Generate Image Gallery
+            const galleryHtml = (p.images || []).map((imgUrl, index) => `
+                <img src="${imgUrl}" alt="${p.name} Image ${index + 1}" class="w-24 h-24 object-cover rounded-md cursor-pointer hover:opacity-80 transition duration-200"
+                     onclick="document.getElementById('main-product-image').src = this.src;">
+            `).join('');
+
+
+            view.innerHTML = `
+                <div class="max-w-4xl mx-auto product-card">
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <!-- Image Gallery -->
+                        <div>
+                            <img id="main-product-image" src="${p.images?.[0] || 'https://placehold.co/600x800/fce7f3/8a3324?text=Trendy+Item'}"
+                                 alt="${p.name}" class="w-full h-auto object-cover rounded-lg shadow-lg mb-4">
+                            <div class="image-gallery flex overflow-x-auto space-x-2 pb-2">
+                                ${galleryHtml}
+                            </div>
+                        </div>
+
+                        <!-- Product Details -->
+                        <div>
+                            <h1 class="text-3xl font-extrabold text-var(--text-dark) mb-2">${p.name}</h1>
+                            <p class="text-4xl font-black text-red-600 mb-6">BDT ${p.price.toLocaleString('en-US')}</p>
+                            
+                            <h2 class="text-lg font-bold mb-2">Description</h2>
+                            <p class="text-gray-600 mb-6 whitespace-pre-wrap">${p.description}</p>
+                            
+                            <form id="product-purchase-form" onsubmit="event.preventDefault(); handleBuyNow()">
+                                <h2 class="text-lg font-bold mb-2">Select Size:</h2>
+                                <div class="mb-6" id="size-options-container">
+                                    ${sizeOptions}
+                                </div>
+                                
+                                <label for="quantity" class="block text-lg font-bold mb-2">Quantity:</label>
+                                <input type="number" id="quantity" value="1" min="1" max="10" required
+                                       class="mb-8 w-24 p-2 border border-gray-300 rounded-lg focus:ring-var(--primary) focus:border-var(--primary)">
+                                
+                                <button type="submit" ${sizes.length === 0 ? 'disabled' : ''}
+                                        class="w-full py-3 btn-primary font-semibold text-lg rounded-lg ${sizes.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}">
+                                    Buy Now
+                                </button>
+                                <button type="button" onclick="showView('home-view')"
+                                        class="w-full mt-4 py-3 bg-gray-200 text-gray-700 font-semibold text-lg rounded-lg hover:bg-gray-300 transition duration-200">
+                                    Continue Shopping
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            `;
+            showView('product-view');
+        };
+
+        window.handleBuyNow = () => {
+            const form = document.getElementById('product-purchase-form');
+            const selectedSize = form.querySelector('input[name="productSize"]:checked')?.value;
+            const quantity = parseInt(document.getElementById('quantity').value, 10);
+
+            if (!selectedSize) {
+                showMessage("Error", "Please select a size before proceeding.", true);
+                return;
+            }
+            if (quantity <= 0 || !quantity) {
+                showMessage("Error", "Quantity must be at least 1.", true);
+                return;
+            }
+            if (currentProduct.stock[selectedSize] < quantity) {
+                showMessage("Error", `Only ${currentProduct.stock[selectedSize]} units of size ${selectedSize} are available.`, true);
+                return;
+            }
+
+            // Prepare a temporary cart for checkout (since the requirement is direct buy)
+            currentCart = {
+                [currentProduct.id]: {
+                    id: currentProduct.id,
+                    name: currentProduct.name,
+                    price: currentProduct.price,
+                    size: selectedSize,
+                    quantity: quantity,
+                    stockMap: currentProduct.stock,
+                    image: currentProduct.images?.[0]
+                }
+            };
+            
+            renderCheckout();
+        };
+
+        // --- Checkout View Logic ---
+
+        const DELIVERY_CHARGE = {
+            'Inside Dhaka': 110,
+            'Outside Dhaka': 130
+        };
+
+        window.renderCheckout = () => {
+            if (Object.keys(currentCart).length === 0) {
+                showMessage("Error", "Your cart is empty. Please select a product first.", true);
+                showView('home-view');
+                return;
+            }
+
+            const item = Object.values(currentCart)[0]; // Since 'Buy Now' only supports one item for now
+            const subtotal = item.price * item.quantity;
+            let deliveryCharge = 0;
+            let totalAmount = subtotal;
+
+            const cartDetails = `
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-4 border-b pb-4">
+                        <img src="${item.image || 'https://placehold.co/60x80/f0f9ff/1f2937?text=Item'}" alt="${item.name}" class="w-16 h-20 object-cover rounded-md">
+                        <div class="flex-grow">
+                            <p class="font-semibold">${item.name}</p>
+                            <p class="text-sm text-gray-500">Size: ${item.size} | Qty: ${item.quantity}</p>
+                        </div>
+                        <p class="font-bold text-lg">BDT ${(item.price * item.quantity).toLocaleString('en-US')}</p>
+                    </div>
+                </div>
+            `;
+
+            const checkoutView = document.getElementById('checkout-view');
+            checkoutView.innerHTML = `
+                <div class="max-w-3xl mx-auto checkout-card">
+                    <h1 class="text-3xl font-bold text-center text-var(--primary) mb-8">Checkout & Payment</h1>
+                    
+                    <div class="mb-8">
+                        <h2 class="text-xl font-semibold mb-4">Order Summary</h2>
+                        ${cartDetails}
+                        <div class="mt-4 pt-4 border-t border-dashed space-y-2">
+                            <div class="flex justify-between">
+                                <span>Subtotal:</span>
+                                <span class="font-semibold">BDT ${subtotal.toLocaleString('en-US')}</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Delivery Charge:</span>
+                                <span class="font-semibold text-red-500" id="delivery-charge-display">BDT 0</span>
+                            </div>
+                            <div class="flex justify-between text-2xl font-bold pt-2 border-t mt-4">
+                                <span>Total Amount:</span>
+                                <span class="text-var(--primary)" id="total-amount-display">BDT ${subtotal.toLocaleString('en-US')}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="checkout-form" onsubmit="event.preventDefault(); handleCheckoutSubmit(event)">
+                        <h2 class="text-xl font-semibold mb-4">Customer Details</h2>
+                        <div class="space-y-4 mb-8">
+                            <div>
+                                <label for="fullName" class="block text-sm font-medium text-gray-700">Full Name</label>
+                                <input type="text" id="fullName" required class="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-var(--primary) focus:border-var(--primary)">
+                            </div>
+                            <div>
+                                <label for="phone" class="block text-sm font-medium text-gray-700">Phone Number (e.g., +8801...)</label>
+                                <input type="tel" id="phone" required class="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm focus:ring-var(--primary) focus:border-var(--primary)">
+                            </div>
+                            <div>
+                                <label for="address" class="block text-sm font-med
