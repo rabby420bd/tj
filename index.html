@@ -41,6 +41,10 @@
             -ms-overflow-style: none;  /* IE and Edge */
             scrollbar-width: none;  /* Firefox */
         }
+        /* New for 1:1 image aspect ratio */
+        .aspect-square {
+            aspect-ratio: 1 / 1;
+        }
     </style>
 </head>
 <body>
@@ -89,7 +93,7 @@
         let isAuthReady = false;
         let products = {};
         let currentProduct = null;
-        let currentCart = {}; // {productId_size: {id, name, price, size, quantity, image}}
+        let currentCart = {}; // {productId_size: {id, name, price, size, quantity, image}} // price here is the discounted price
         let allOrders = [];
 
         // --- Utility Functions ---
@@ -156,6 +160,13 @@
             } else if (hash === 'checkout') {
                 renderCheckout();
             } else {
+                // Rerender products on hash change to home, respecting search query
+                const searchInput = document.getElementById('product-search');
+                if (searchInput) {
+                    handleSearch(searchInput.value);
+                } else {
+                    renderProducts(); 
+                }
                 showView('home-view');
             }
         };
@@ -215,10 +226,20 @@
                 snapshot.forEach(doc => {
                     products[doc.id] = { id: doc.id, ...doc.data() };
                 });
-                renderProducts(); 
+                // Check if the search input exists, and if so, filter the products upon receiving new data
+                const searchInput = document.getElementById('product-search');
+                if (searchInput && searchInput.value) {
+                    handleSearch(searchInput.value);
+                } else {
+                    renderProducts(); 
+                }
+                
                 if (currentProduct && products[currentProduct.id]) {
                     currentProduct = products[currentProduct.id];
-                    // Note: Rerender product detail if necessary, but careful not to overwrite the form state.
+                    // If the user is on the product detail page, we should re-render it to reflect price/stock changes
+                    if (window.location.hash === '#product-view') {
+                         showProductDetail(currentProduct.id);
+                    }
                 }
             }, (error) => console.error("Error fetching products:", error));
 
@@ -235,7 +256,8 @@
         };
 
         // --- Cart Management ---
-
+        // Cart item price is the discounted price (p.price)
+        
         window.updateCartCount = () => {
             const count = Object.values(currentCart).reduce((sum, item) => sum + item.quantity, 0);
             const cartButton = document.getElementById('cart-button');
@@ -275,10 +297,11 @@
                 return;
             }
             
+            // Note: currentProduct.price is the discounted price
             currentCart[key] = {
                 id: currentProduct.id,
                 name: currentProduct.name,
-                price: currentProduct.price,
+                price: currentProduct.price, 
                 size: selectedSize,
                 quantity: newTotalQuantity,
                 image: currentProduct.images?.[0]
@@ -299,32 +322,78 @@
         };
 
 
-        // --- Home View Logic ---
+        // --- Home View Logic (Updated for Search and New Card Format) ---
 
-        window.renderProducts = () => {
-            const container = document.getElementById('product-list');
-            // ... (product rendering logic is unchanged)
-            if (!container) return;
-
-            if (Object.keys(products).length === 0) {
-                container.innerHTML = `<p class="text-center text-gray-500 py-12 col-span-full">No products found. ${auth.currentUser?.email === ADMIN_EMAIL ? 'Go to Admin Panel to add some!' : 'Check back later!'}</p>`;
+        // New function to filter products based on search query
+        window.handleSearch = (query) => {
+            const term = query.toLowerCase().trim();
+            const productsArray = Object.values(products);
+            
+            if (term === '') {
+                renderProducts(productsArray);
                 return;
             }
 
-            container.innerHTML = Object.values(products).map(p => `
-                <div class="product-card flex flex-col cursor-pointer hover:shadow-xl transition duration-300" onclick="showProductDetail('${p.id}')">
-                    <img src="${p.images?.[0] || 'https://placehold.co/400x500/fce7f3/8a3324?text=Trendy+Item'}"
-                         alt="${p.name}" class="w-full h-64 object-cover rounded-t-lg mb-4">
-                    <div class="flex-grow">
-                        <h3 class="text-lg font-semibold truncate mb-1">${p.name}</h3>
-                        <p class="text-xl font-bold text-gray-800">BDT ${p.price.toLocaleString('en-US')}</p>
-                    </div>
-                    <button class="mt-4 w-full py-2 btn-primary rounded-lg text-sm">View Details</button>
-                </div>
-            `).join('');
+            const filteredProducts = productsArray.filter(p => 
+                p.name.toLowerCase().includes(term) || 
+                p.description.toLowerCase().includes(term)
+            );
+            renderProducts(filteredProducts);
         };
 
-        // --- Product Detail View Logic (Description moved to bottom) ---
+        window.renderProducts = (productsToRender = Object.values(products)) => {
+            const container = document.getElementById('product-list');
+            if (!container) return;
+
+            if (productsToRender.length === 0) {
+                container.innerHTML = `<p class="text-center text-gray-500 py-12 col-span-full">No products found matching your search. ${auth.currentUser?.email === ADMIN_EMAIL ? 'Go to Admin Panel to add some!' : 'Check back later!'}</p>`;
+                return;
+            }
+
+            container.innerHTML = productsToRender.map(p => {
+                const isDiscounted = p.oldPrice && p.oldPrice > p.price;
+                
+                let discountPercentage = 0;
+                if (isDiscounted) {
+                    discountPercentage = ((1 - (p.price / p.oldPrice)) * 100).toFixed(0);
+                }
+                const discountBadge = isDiscounted ? `<span class="absolute top-2 left-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-full shadow-md z-10">${discountPercentage}% OFF</span>` : '';
+                
+                return `
+                    <div class="product-card flex flex-col hover:shadow-xl transition duration-300 overflow-hidden relative">
+                        ${discountBadge}
+                        <!-- 1:1 Image Container -->
+                        <div class="aspect-square w-full overflow-hidden bg-gray-100 cursor-pointer" onclick="showProductDetail('${p.id}')">
+                            <img src="${p.images?.[0] || 'https://placehold.co/400x400/fce7f3/8a3324?text=Trendy+Item'}"
+                                 alt="${p.name}" class="w-full h-full object-cover transition duration-500 hover:scale-105">
+                        </div>
+                        
+                        <div class="p-4 flex flex-col flex-grow">
+                            <h3 class="text-lg font-semibold truncate mb-1">${p.name}</h3>
+                            
+                            <div class="flex flex-col mb-3">
+                                ${isDiscounted 
+                                    ? `<span class="text-sm line-through text-gray-500">BDT ${p.oldPrice.toLocaleString('en-US')}</span>`
+                                    : ''
+                                }
+                                <span class="text-xl font-bold ${isDiscounted ? 'text-red-600' : 'text-gray-800'}">BDT ${p.price.toLocaleString('en-US')}</span>
+                            </div>
+                            
+                            <!-- Buy Icon and Button -->
+                            <button onclick="event.stopPropagation(); window.location.hash='#product-view'; showProductDetail('${p.id}')"
+                                    class="mt-auto w-full py-2 btn-primary rounded-lg text-sm font-semibold flex items-center justify-center space-x-2 transition duration-200">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                                <span>Buy Now</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        };
+
+        // --- Product Detail View Logic (Updated for prices) ---
 
         window.showProductDetail = (productId) => {
             const p = products[productId];
@@ -334,6 +403,7 @@
                 return;
             }
             currentProduct = p;
+            const isDiscounted = p.oldPrice && p.oldPrice > p.price;
             
             const view = document.getElementById('product-view');
             
@@ -369,7 +439,15 @@
                         <!-- Product Details & Actions -->
                         <div>
                             <h1 class="text-3xl font-extrabold text-var(--text-dark) mb-2">${p.name}</h1>
-                            <p class="text-4xl font-black text-red-600 mb-6">BDT ${p.price.toLocaleString('en-US')}</p>
+                            
+                            <!-- Updated Price Display -->
+                            <div class="flex items-center space-x-4 mb-6">
+                                ${isDiscounted 
+                                    ? `<span class="text-2xl line-through text-gray-500">BDT ${p.oldPrice.toLocaleString('en-US')}</span>`
+                                    : ''
+                                }
+                                <span class="text-4xl font-black ${isDiscounted ? 'text-red-600' : 'text-gray-800'}">BDT ${p.price.toLocaleString('en-US')}</span>
+                            </div>
                             
                             <form id="product-purchase-form" onsubmit="event.preventDefault(); handleAddToCart()">
                                 <h2 class="text-lg font-bold mb-2">Select Size:</h2>
@@ -410,7 +488,8 @@
         };
 
         // --- Checkout View Logic (Updated for multi-item cart + Delete option) ---
-
+        // Price shown in cart details is the discounted price (p.price)
+        
         const DELIVERY_CHARGE = {
             'Inside Dhaka': 110,
             'Outside Dhaka': 130
@@ -437,6 +516,7 @@
                                 <div class="flex-grow">
                                     <p class="font-semibold">${item.name}</p>
                                     <p class="text-sm text-gray-500">Size: ${item.size} | Qty: ${item.quantity}</p>
+                                    <p class="text-xs text-gray-400">Unit Price: BDT ${item.price.toLocaleString('en-US')}</p>
                                 </div>
                                 <div class="flex flex-col items-end space-y-2">
                                     <p class="font-bold text-lg">BDT ${(item.price * item.quantity).toLocaleString('en-US')}</p>
@@ -560,7 +640,7 @@
             const orderId = generateOrderId(phoneNumber);
             
             // Calculate amounts from cart
-            const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0); // Uses discounted price
             const deliveryCharge = parseInt(form.dataset.deliveryCharge, 10);
             const totalAmount = parseInt(form.dataset.totalAmount, 10);
             const location = form.dataset.location;
@@ -571,7 +651,7 @@
                 name: item.name,
                 size: item.size,
                 quantity: item.quantity,
-                price: item.price // price per unit
+                price: item.price // price per unit (discounted price)
             }));
             
             const newOrder = {
@@ -649,7 +729,7 @@
             }
         };
 
-        // --- Admin View Logic ---
+        // --- Admin View Logic (Unchanged) ---
 
         window.handleAdminLogin = async () => {
             const email = document.getElementById('admin-email').value;
@@ -697,10 +777,9 @@
             showView('admin-view');
         };
 
-        // --- Admin Product Management (Unchanged logic) ---
+        // --- Admin Product Management (Updated for old/discounted price) ---
 
         window.renderAdminProducts = () => {
-            // ... (Product list rendering is unchanged, just ensures admin view is active)
             const container = document.getElementById('admin-product-list');
             if (!container) return;
             
@@ -708,11 +787,17 @@
 
             Object.values(products).forEach(p => {
                 const stockSummary = Object.entries(p.stock || {}).map(([s, q]) => `${s}: ${q}`).join(', ');
+                const isDiscounted = p.oldPrice && p.oldPrice > p.price;
+                
                 listHTML += `
                     <div class="p-4 border rounded-lg flex flex-col md:flex-row justify-between items-start md:items-center bg-gray-50">
                         <div class="flex-grow">
                             <h4 class="font-bold text-lg">${p.name} <span class="text-sm text-gray-500">(ID: ${p.id.substring(0, 8)}...)</span></h4>
-                            <p class="text-sm text-gray-600">Price: BDT ${p.price.toLocaleString('en-US')}</p>
+                            <p class="text-sm text-gray-600">
+                                Price: 
+                                <span class="font-semibold text-var(--primary)">BDT ${p.price.toLocaleString('en-US')}</span>
+                                ${isDiscounted ? `<span class="line-through text-red-500 ml-2">BDT ${p.oldPrice.toLocaleString('en-US')}</span>` : ''}
+                            </p>
                             <p class="text-sm text-gray-600">Stock: ${stockSummary || 'N/A'}</p>
                         </div>
                         <div class="flex space-x-2 mt-2 md:mt-0">
@@ -888,7 +973,7 @@
             }
         };
         
-        // --- Admin Product Form Helper Functions (Unchanged logic) ---
+        // --- Admin Product Form Helper Functions (Updated for oldPrice) ---
 
         window.setupAddEditForm = (product) => {
             const form = document.getElementById('add-edit-product-form');
@@ -902,7 +987,9 @@
             if (product) {
                 form.name.value = product.name;
                 form.description.value = product.description;
-                form.price.value = product.price;
+                // NEW: Handle two prices
+                form.price.value = product.price; // Discounted Price
+                form.oldPrice.value = product.oldPrice || ''; // Old Price
                 form.images.value = product.images?.join('\n') || '';
             }
 
@@ -967,8 +1054,16 @@
 
             const name = form.name.value;
             const description = form.description.value;
-            const price = parseFloat(form.price.value);
+            const price = parseFloat(form.price.value); // Discounted Price
+            const oldPriceValue = form.oldPrice.value;
+            const oldPrice = oldPriceValue ? parseFloat(oldPriceValue) : null; 
             const images = form.images.value.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+
+            // Validation: oldPrice must be greater than discounted price if set
+            if (oldPrice && oldPrice <= price) {
+                showMessage("Validation Error", "Original Price must be higher than the Discounted Price.", true);
+                return;
+            }
 
             // Parse Stock/Size data from hidden field
             const stockArray = form.querySelector('[name="stockData"]').value.split('|').filter(s => s);
@@ -980,7 +1075,7 @@
                 }
             });
 
-            const productData = { name, description, price, images, stock: stockMap };
+            const productData = { name, description, price, oldPrice, images, stock: stockMap };
             const productsRef = getPublicCollectionRef('products');
 
             try {
@@ -988,8 +1083,6 @@
                     await updateDoc(doc(productsRef, productId), productData);
                     showMessage("Success", `Product "${name}" updated successfully!`);
                 } else {
-                    // Use addDoc if not updating an existing product
-                    // Note: The previous logic used 'setDoc' with a generated ID. For a new doc, 'addDoc' is simpler.
                     const newDocRef = doc(productsRef); // Firestore auto-generates the ID
                     await setDoc(newDocRef, productData);
                     showMessage("Success", `Product "${name}" added successfully!`);
@@ -1047,12 +1140,62 @@
     </div>
 
 
-    <!-- HEADER/NAVBAR (Updated for routing) -->
+    <!-- HEADER/NAVBAR (Updated for logo) -->
     <header class="bg-white shadow-md sticky top-0 z-40">
         <div class="max-w-7xl mx-auto p-4 flex justify-between items-center">
-            <div onclick="window.location.hash='#home'" class="text-2xl font-black cursor-pointer text-var(--primary)">
-                Trendy Jamakapor
+            
+            <!-- NEW LOGO SVG (Geometric Crest for Men's Fashion) -->
+            <div onclick="window.location.hash='#home'" class="cursor-pointer">
+                <svg width="200" height="40" viewBox="0 0 450 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <style>
+                        .trendy-text-men {
+                            font-family: 'Inter', sans-serif;
+                            font-weight: 900;
+                            font-size: 50px;
+                            letter-spacing: 5px;
+                            fill: var(--primary); /* Filled text for bolder men's look */
+                        }
+                        .jamakapor-text-men {
+                            font-family: 'Inter', sans-serif;
+                            font-weight: 300;
+                            font-size: 20px;
+                            letter-spacing: 5px;
+                            fill: var(--text-dark);
+                        }
+                        .crest-fill {
+                            fill: var(--primary);
+                            stroke: var(--text-dark);
+                            stroke-width: 3;
+                        }
+                        .text-group {
+                            transform: translateY(10px);
+                        }
+                    </style>
+                    
+                    <!-- Geometric Crest/Shield Icon (Modern, angular design) -->
+                    <g transform="translate(35, 20) scale(0.6)">
+                        <!-- Shield Shape -->
+                        <path d="M50 0 L100 20 V80 L50 100 L0 80 V20 Z" class="crest-fill"/>
+                        <!-- Vertical divider -->
+                        <path d="M50 15 V85" stroke="white" stroke-width="5" />
+                        <!-- Horizontal divider -->
+                        <path d="M20 30 L80 30" stroke="white" stroke-width="5" />
+                        <!-- Monogram T (for Trendy) -->
+                        <text x="50" y="65" text-anchor="middle" font-size="40" font-weight="900" fill="white" font-family="'Inter', sans-serif">T</text>
+                    </g>
+
+                    <!-- Text Group -->
+                    <g class="text-group">
+                        <!-- TRENDY Text -->
+                        <text x="120" y="55" class="trendy-text-men">TRENDY</text>
+
+                        <!-- JAMAKAPOR Text -->
+                        <text x="125" y="80" class="jamakapor-text-men">JAMAKAPOR</text>
+                    </g>
+                </svg>
             </div>
+            <!-- END NEW LOGO SVG -->
+
             <nav class="flex items-center space-x-4">
                 <a href="tel:+8801401603157" class="text-gray-700 hover:text-var(--primary) text-sm font-medium hidden sm:inline">
                     +8801401603157
@@ -1075,9 +1218,18 @@
 
     <main class="max-w-7xl mx-auto p-4 pt-8">
 
-        <!-- 1. HOME VIEW -->
+        <!-- 1. HOME VIEW (UPDATED: Added Search Box) -->
         <div id="home-view" class="app-view">
             <h1 class="text-4xl font-extrabold text-center mb-10 text-gray-800">New Arrivals</h1>
+            
+            <!-- NEW SEARCH BOX -->
+            <div class="max-w-xl mx-auto mb-10">
+                <input type="text" id="product-search" oninput="handleSearch(this.value)" 
+                       placeholder="Search products by name or description..."
+                       class="w-full p-4 border border-gray-300 rounded-xl shadow-lg focus:ring-var(--primary) focus:border-var(--primary) transition duration-200">
+            </div>
+            <!-- END NEW SEARCH BOX -->
+
             <div id="product-list" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                 <!-- Products will be rendered here by JavaScript -->
                 <p class="text-center col-span-full py-12 text-gray-500">Loading products...</p>
@@ -1143,23 +1295,34 @@
                             <h2 id="form-title" class="text-2xl font-bold mb-6">Add New Product</h2>
                             <form id="add-edit-product-form" onsubmit="handleAddEditProduct(event)">
                                 <input type="hidden" name="stockData" value="">
-                                <!-- ... Form fields ... (Name, Price, Desc, Images) -->
+                                
                                 <div class="space-y-4">
                                     <div>
                                         <label for="name" class="block text-sm font-medium text-gray-700">Product Name</label>
                                         <input type="text" name="name" required class="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm">
                                     </div>
+                                    
+                                    <!-- NEW: Old Price Field -->
                                     <div>
-                                        <label for="price" class="block text-sm font-medium text-gray-700">Price (BDT)</label>
-                                        <input type="number" name="price" required min="1" class="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm">
+                                        <label for="oldPrice" class="block text-sm font-medium text-gray-700">Original Price (BDT)</label>
+                                        <input type="number" name="oldPrice" min="1" class="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm" placeholder="e.g., 1500 (Set this if there is a discount)">
                                     </div>
+                                    
+                                    <!-- UPDATED: Discounted Price Field -->
+                                    <div>
+                                        <label for="price" class="block text-sm font-medium text-gray-700">Discounted Price (BDT) (Required)</label>
+                                        <input type="number" name="price" required min="1" class="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm" placeholder="e.g., 1200">
+                                    </div>
+                                    
                                     <div>
                                         <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
                                         <textarea name="description" rows="3" required class="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm"></textarea>
                                     </div>
+                                    
+                                    <!-- Multiple Image Add System (One URL per line) -->
                                     <div>
-                                        <label for="images" class="block text-sm font-medium text-gray-700">Image URLs (One per line)</label>
-                                        <textarea name="images" rows="4" placeholder="https://image1.com/product.jpg" required class="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm"></textarea>
+                                        <label for="images" class="block text-sm font-medium text-gray-700">Image URLs (One per line for multiple photos)</label>
+                                        <textarea name="images" rows="4" placeholder="https://image1.com/product.jpg\nhttps://image2.com/product_side.jpg" required class="mt-1 block w-full p-3 border border-gray-300 rounded-lg shadow-sm"></textarea>
                                     </div>
                                     
                                     <!-- Stock & Size Management -->
