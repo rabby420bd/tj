@@ -369,7 +369,8 @@
                         </div>
                         
                         <div class="p-4 flex flex-col flex-grow">
-                            <h3 class="text-lg font-semibold truncate mb-1">${p.name}</h3>
+                            <!-- UPDATED: Removed truncate and set text-base -->
+                            <h3 class="text-base font-semibold mb-1">${p.name}</h3>
                             
                             <div class="flex flex-col mb-3">
                                 ${isDiscounted 
@@ -1230,7 +1231,8 @@
             </div>
             <!-- END NEW SEARCH BOX -->
 
-            <div id="product-list" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <!-- UPDATED GRID LAYOUT: Max 3 columns for bigger images -->
+            <div id="product-list" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
                 <!-- Products will be rendered here by JavaScript -->
                 <p class="text-center col-span-full py-12 text-gray-500">Loading products...</p>
             </div>
