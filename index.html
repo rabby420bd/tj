@@ -177,6 +177,75 @@
             return `TJ${datePart}${timePart}${phoneSuffix}`;
         };
 
+        // --- Email Content Generator ---
+        window.generateOrderEmailHtml = (order) => {
+            const itemsHtml = order.items.map(item => `
+                <tr>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee;">${item.name} (${item.size})</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: center;">${item.quantity}</td>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee; text-align: right;">৳${item.price}</td>
+                </tr>
+            `).join('');
+
+            return `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+                    <div style="background-color: #8a3324; padding: 20px; text-align: center; color: white;">
+                        <h1 style="margin: 0;">TRENDY JAMAKAPOR</h1>
+                        <p style="margin: 5px 0 0;">Order Confirmation</p>
+                    </div>
+                    <div style="padding: 20px;">
+                        <p>Hi ${order.customerName},</p>
+                        <p>Thank you for your order! We have received it and are processing it now.</p>
+                        
+                        <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                            <p style="margin: 5px 0;"><strong>Order ID:</strong> ${order.orderId}</p>
+                            <p style="margin: 5px 0;"><strong>Status:</strong> ${order.status}</p>
+                            <p style="margin: 5px 0;"><strong>TrxID:</strong> ${order.transactionId}</p>
+                        </div>
+
+                        <h3 style="border-bottom: 2px solid #8a3324; padding-bottom: 5px;">Order Details</h3>
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background-color: #eee;">
+                                    <th style="padding: 8px; text-align: left;">Item</th>
+                                    <th style="padding: 8px; text-align: center;">Qty</th>
+                                    <th style="padding: 8px; text-align: right;">Price</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${itemsHtml}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="2" style="padding: 8px; text-align: right;">Subtotal:</td>
+                                    <td style="padding: 8px; text-align: right;">৳${order.subtotal}</td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" style="padding: 8px; text-align: right;">Delivery:</td>
+                                    <td style="padding: 8px; text-align: right;">৳${order.deliveryCharge}</td>
+                                </tr>
+                                <tr style="font-weight: bold; font-size: 1.1em;">
+                                    <td colspan="2" style="padding: 8px; text-align: right;">Total:</td>
+                                    <td style="padding: 8px; text-align: right; color: #8a3324;">৳${order.totalAmount}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+
+                        <div style="margin-top: 30px;">
+                            <h4 style="margin-bottom: 5px;">Delivery Address:</h4>
+                            <p style="margin: 0; color: #666;">
+                                ${order.address}<br>
+                                Phone: ${order.phone}
+                            </p>
+                        </div>
+                    </div>
+                    <div style="background-color: #f1f1f1; padding: 15px; text-align: center; font-size: 12px; color: #666;">
+                        <p>&copy; 2025 Trendy Jamakapor. All rights reserved.</p>
+                    </div>
+                </div>
+            `;
+        };
+
         // --- Routing Logic ---
 
         window.checkUrlHash = () => {
@@ -433,11 +502,12 @@
                         </div>
                         
                         <div class="p-5 flex flex-col flex-grow">
-                            <h3 class="text-base font-semibold text-gray-800 mb-1 line-clamp-1 group-hover:text-primary transition-colors">${p.name}</h3>
+                            <!-- REMOVED line-clamp-1 from the class list below to show full name -->
+                            <h3 class="text-base font-semibold text-gray-800 mb-1 group-hover:text-primary transition-colors">${p.name}</h3>
                             
                             <div class="flex items-baseline space-x-2 mt-auto">
-                                <span class="text-xl font-bold text-primary">BDT ${p.price.toLocaleString('en-US')}</span>
-                                ${isDiscounted ? `<span class="text-sm line-through text-gray-400">BDT ${p.oldPrice.toLocaleString('en-US')}</span>` : ''}
+                                <span class="text-xl font-bold text-primary">৳${p.price.toLocaleString('en-US')}</span>
+                                ${isDiscounted ? `<span class="text-sm line-through text-gray-400">৳${p.oldPrice.toLocaleString('en-US')}</span>` : ''}
                             </div>
                             
                             <button onclick="event.stopPropagation(); window.location.hash='#${productLink}'"
@@ -510,9 +580,9 @@
                             <h1 class="text-3xl md:text-4xl font-serif font-bold text-gray-900 mb-2 leading-tight">${p.name}</h1>
                             
                             <div class="flex items-center space-x-4 mb-8">
-                                <span class="text-3xl font-bold text-primary">BDT ${p.price.toLocaleString('en-US')}</span>
-                                ${isDiscounted ? `<span class="text-xl line-through text-gray-400">BDT ${p.oldPrice.toLocaleString('en-US')}</span>` : ''}
-                                ${isDiscounted ? `<span class="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded-md">Save BDT ${(p.oldPrice - p.price).toLocaleString()}</span>` : ''}
+                                <span class="text-3xl font-bold text-primary">৳${p.price.toLocaleString('en-US')}</span>
+                                ${isDiscounted ? `<span class="text-xl line-through text-gray-400">৳${p.oldPrice.toLocaleString('en-US')}</span>` : ''}
+                                ${isDiscounted ? `<span class="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded-md">Save ৳${(p.oldPrice - p.price).toLocaleString()}</span>` : ''}
                             </div>
                             
                             <form id="product-purchase-form" onsubmit="event.preventDefault(); handleAddToCart()" class="flex-grow">
@@ -607,11 +677,16 @@
                                 <div class="space-y-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                                        <input type="text" id="fullName" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-primary focus:border-transparent transition outline-none" placeholder="Name">
+                                        <input type="text" id="fullName" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-primary focus:border-transparent transition outline-none" placeholder="John Doe">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                                        <input type="tel" id="phone" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-primary focus:border-transparent transition outline-none" placeholder="01...">
+                                        <input type="tel" id="phone" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-primary focus:border-transparent transition outline-none" placeholder="+880 1XXX NNNNNN">
+                                    </div>
+                                    <!-- Email Input Added Here -->
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Email Address <span class="text-gray-400 font-normal">(Optional)</span></label>
+                                        <input type="email" id="email" class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-primary focus:border-transparent transition outline-none" placeholder="you@example.com">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Full Address</label>
@@ -713,6 +788,7 @@
             const form = event.target;
             const items = Object.values(currentCart);
             const phoneNumber = document.getElementById('phone').value;
+            const email = document.getElementById('email').value.trim(); // Capture Email
 
             if (items.length === 0) {
                 showMessage("Error", "Cart is empty.", true);
@@ -733,6 +809,10 @@
                 price: item.price 
             }));
             
+            // --- 1. PREPARE DATA FOR EXTENSION ---
+            // We structure the object so the "Trigger Email" extension understands it.
+            // It looks for 'to' and 'message'.
+            
             const newOrder = {
                 orderId: orderId, 
                 customerName: document.getElementById('fullName').value,
@@ -746,8 +826,18 @@
                 totalAmount: totalAmount,
                 status: 'Confirmed', 
                 timestamp: serverTimestamp(),
-                customer_uid: userId 
+                customer_uid: userId,
+                email: email // Save plain email field
             };
+
+            // Add Email Extension Data if email exists
+            if (email) {
+                newOrder.to = email; // Extension looks for 'to'
+                newOrder.message = {
+                    subject: `Order Confirmed: ${orderId}`,
+                    html: generateOrderEmailHtml(newOrder) // Generate the HTML body
+                };
+            }
 
             const ordersRef = getPublicCollectionRef('orders');
             const productsRef = getPublicCollectionRef('products');
@@ -783,10 +873,15 @@
                     return true;
                 });
 
-                showMessage("Order Successful!", 
-                    `<div class="text-center"><div class="text-5xl mb-2">🎉</div><p>Thank you, ${newOrder.customerName}!</p><p class="text-sm text-gray-500 my-2">Your Order ID</p><div class="bg-gray-100 p-3 rounded-lg font-mono text-xl font-bold text-primary select-all">${orderId}</div><p class="text-xs text-gray-400 mt-2">Save this ID to track your order.</p></div>`,
-                    false
-                );
+                // Construct success message
+                let successHTML = `<div class="text-center"><div class="text-5xl mb-2">🎉</div><p>Thank you, ${newOrder.customerName}!</p><p class="text-sm text-gray-500 my-2">Your Order ID</p><div class="bg-gray-100 p-3 rounded-lg font-mono text-xl font-bold text-primary select-all">${orderId}</div><p class="text-xs text-gray-400 mt-2">Save this ID to track your order.</p>`;
+                
+                if(email) {
+                    successHTML += `<p class="text-xs text-green-600 mt-2 font-medium">Order details sent to ${email}</p>`;
+                }
+                successHTML += `</div>`;
+
+                showMessage("Order Successful!", successHTML, false);
                 currentCart = {}; 
                 saveCart(); 
                 window.location.hash='#home';
@@ -918,6 +1013,9 @@
                 if(order.status === 'Cancelled') statusClass = 'bg-red-100 text-red-800';
                 if(order.status === 'Confirmed') statusClass = 'bg-blue-100 text-blue-800';
 
+                // Added Email display in admin panel
+                const emailDisplay = order.email ? `<p class="text-xs text-blue-600 break-all">${order.email}</p>` : '<p class="text-xs text-gray-400">No Email</p>';
+
                 return `
                     <div class="p-5 border border-gray-200 rounded-xl bg-white shadow-sm">
                         <div class="flex justify-between items-start mb-4">
@@ -934,8 +1032,9 @@
                             <div class="bg-gray-50 p-3 rounded-lg text-sm">
                                 <p class="font-bold text-gray-700 mb-1">Customer</p>
                                 <p>${order.customerName}</p>
-                                <p class="font-mono text-xs">${order.phone}</p>
-                                <p class="text-gray-500 truncate">${order.address}</p>
+                                <p class="font-mono text-xs mb-1">${order.phone}</p>
+                                ${emailDisplay}
+                                <p class="text-gray-500 truncate mt-1">${order.address}</p>
                             </div>
                             <div class="bg-gray-50 p-3 rounded-lg text-sm">
                                 <p class="font-bold text-gray-700 mb-1">Payment</p>
@@ -1469,4 +1568,5 @@
     
 </body>
 </html>
+
 
