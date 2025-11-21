@@ -3,32 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trendy Jamakapor - Premium Fashion</title>
+    <title>Trendy Jamakapor - Elevate Your Style</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
-
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
-                    },
                     colors: {
-                        brand: {
-                            50: '#fdf2f2',
-                            100: '#fde3e3',
-                            500: '#8a3324', // Primary Red/Burgundy
-                            600: '#702418',
-                            800: '#5a1e14',
-                            900: '#3d1009',
-                        }
+                        primary: '#8a3324',
+                        'primary-dark': '#6d251a',
+                        secondary: '#fce7f3',
+                        dark: '#1f2937',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
                     },
                     animation: {
-                        'fade-in': 'fadeIn 0.5s ease-out',
-                        'slide-up': 'slideUp 0.5s ease-out',
+                        'fade-in': 'fadeIn 0.5s ease-out forwards',
+                        'slide-up': 'slideUp 0.5s ease-out forwards',
                     },
                     keyframes: {
                         fadeIn: {
@@ -36,58 +30,52 @@
                             '100%': { opacity: '1' },
                         },
                         slideUp: {
-                            '0%': { transform: 'translateY(20px)', opacity: '0' },
-                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
                         }
                     }
                 }
             }
         }
     </script>
-
     <style>
-        /* Custom Utilities */
-        .view-hidden { display: none !important; }
-        
-        .glass-nav {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-        .hide-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-        .hide-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
+        .view-hidden { display: none; }
+        
+        /* Hide scrollbar for horizontal gallery but keep functionality */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
         .aspect-square { aspect-ratio: 1 / 1; }
         
-        /* Smooth inputs */
-        input, textarea, select {
-            transition: all 0.2s ease-in-out;
-        }
-        input:focus, textarea:focus, select:focus {
-            outline: none;
-            border-color: #8a3324;
-            box-shadow: 0 0 0 3px rgba(138, 51, 36, 0.1);
+        /* Glass Effect */
+        .glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
         }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 antialiased selection:bg-brand-100 selection:text-brand-900">
+<body class="bg-gray-50 text-dark font-sans antialiased selection:bg-primary selection:text-white flex flex-col min-h-screen">
 
+    <!-- Firebase SDK Imports and Initialization -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot, collection, query, where, getDocs, updateDoc, deleteDoc, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
+        import { setLogLevel } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
         
+        // setLogLevel('Debug'); // Uncomment for debugging
+
         // ====================================================================================
-        // --- FIREBASE CONFIGURATION ---
+        // --- VERCEL DEPLOYMENT CONFIGURATION ---
         
-        // REPLACED PLACEHOLDERS WITH ACTUAL CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyBPM0unGvJC14lG85nmGmLC1X58521-o-s",
             authDomain: "trendy-jamakapor.firebaseapp.com",
@@ -98,13 +86,18 @@
             measurementId: "G-PFW70YB09X" 
         };
         
-        // MATCHED DATABASE PATH FROM ORIGINAL FILE
         const appId = 'trendy-jamakapor-vercel'; 
 
         // --- GLOBAL ADMIN CONSTANTS ---
         const ADMIN_EMAIL = 'rabby420bd@gmail.com'; 
         const ORDER_STATUSES = [
-            'Confirmed', 'Picked', 'In Transit', 'Shipped', 'Out for delivery', 'Delivered', 'Cancelled'
+            'Confirmed',
+            'Picked',
+            'In Transit',
+            'Shipped',
+            'Out for delivery',
+            'Delivered',
+            'Cancelled'
         ];
         // ====================================================================================
 
@@ -120,24 +113,19 @@
 
         window.showMessage = (title, message, isError = false) => {
             const modal = document.getElementById('message-modal');
-            const titleEl = document.getElementById('modal-title');
-            const msgEl = document.getElementById('modal-message');
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').innerHTML = message;
             const iconContainer = document.getElementById('modal-icon-container');
+            const titleText = document.getElementById('modal-title');
             
-            titleEl.textContent = title;
-            msgEl.innerHTML = message;
-            
-            // Update Icon based on type
             if (isError) {
-                iconContainer.innerHTML = `<i class="ph ph-warning-circle text-4xl text-red-500"></i>`;
-                document.getElementById('modal-btn').className = "w-full py-3 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl font-bold transition";
+                iconContainer.innerHTML = `<svg class="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                titleText.className = "text-xl font-bold text-red-600";
             } else {
-                iconContainer.innerHTML = `<i class="ph ph-check-circle text-4xl text-green-500"></i>`;
-                document.getElementById('modal-btn').className = "w-full py-3 bg-brand-50 text-brand-600 hover:bg-brand-100 rounded-xl font-bold transition";
+                iconContainer.innerHTML = `<svg class="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+                titleText.className = "text-xl font-bold text-green-600";
             }
-            
             modal.classList.remove('hidden');
-            modal.classList.add('flex');
         };
 
         window.showView = (viewId) => {
@@ -147,28 +135,16 @@
             });
             const activeView = document.getElementById(viewId);
             activeView.classList.remove('view-hidden');
-            activeView.classList.add('animate-fade-in');
-            window.scrollTo(0, 0);
+            activeView.classList.add('animate-fade-in'); // Trigger animation
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         };
         
         window.copyToClipboard = (text) => {
             navigator.clipboard.writeText(text).then(() => {
-                showMessage("Link Copied", "Link copied to clipboard!", false);
+                showMessage("Link Copied", "Product link copied to clipboard!", false);
             }, (err) => {
                 console.error('Could not copy text: ', err);
-                // Fallback for iframes
-                 const textArea = document.createElement("textarea");
-                textArea.value = text;
-                document.body.appendChild(textArea);
-                textArea.focus();
-                textArea.select();
-                try {
-                    document.execCommand('copy');
-                    showMessage("Link Copied", "Link copied to clipboard!", false);
-                } catch (err) {
-                    showMessage("Error", "Failed to copy link.", true);
-                }
-                document.body.removeChild(textArea);
+                showMessage("Error", "Failed to copy link.", true);
             });
         };
 
@@ -179,11 +155,14 @@
                 String(now.getMonth() + 1).padStart(2, '0'),
                 String(now.getFullYear()).slice(2)
             ].join('');
+
             const timePart = [
                 String(now.getHours()).padStart(2, '0'),
                 String(now.getMinutes()).padStart(2, '0')
             ].join('');
-            const phoneSuffix = phoneNumber.replace(/\D/g, '').slice(-3) || '000';
+            
+            const phoneSuffix = phoneNumber.replace(/\D/g, '').slice(-3) || '000'; 
+
             return `TJ${datePart}${timePart}${phoneSuffix}`;
         };
 
@@ -205,7 +184,6 @@
                 const slugOrId = hash.split('product/')[1];
                 handleProductRoute(slugOrId);
             } else {
-                // Home View
                 const searchInput = document.getElementById('product-search');
                 if (searchInput && searchInput.value) {
                     handleSearch(searchInput.value);
@@ -222,10 +200,9 @@
 
             if (foundProduct) {
                 showProductDetail(foundProduct.id);
-                showView('product-view');
             } else {
                 if (Object.keys(products).length > 0) {
-                    showMessage("Not Found", "Product not found.", true);
+                    showMessage("Not Found", "The product you are looking for does not exist.", true);
                     window.location.hash = '#home';
                 }
             }
@@ -251,8 +228,9 @@
                     } else {
                         userId = null;
                         if (!isAuthReady) {
-                            // Log in anonymously if no user
                             await signInAnonymously(auth);
+                        } else {
+                            isAuthReady = true;
                         }
                     }
                     updateCartCount(); 
@@ -261,8 +239,9 @@
                 window.addEventListener('hashchange', checkUrlHash);
 
             } catch (error) {
-                console.error("Firebase Init Error:", error);
-                showMessage("Setup Error", "Failed to connect. Please refresh.", true);
+                console.error("Firebase Initialization Error:", error);
+                let errorMessage = "Failed to initialize the application. Check console for details.";
+                showMessage("Setup Error", errorMessage, true);
             }
         };
 
@@ -292,7 +271,7 @@
                     allOrders.push({ id: doc.id, ...doc.data() });
                 });
                 allOrders.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
-                renderAdminOrders();
+                renderAdminOrders(); 
             }, (error) => console.error("Error fetching orders:", error));
         };
 
@@ -300,10 +279,24 @@
         
         window.updateCartCount = () => {
             const count = Object.values(currentCart).reduce((sum, item) => sum + item.quantity, 0);
-            const cartBadge = document.getElementById('cart-count');
-            if (cartBadge) {
-                cartBadge.textContent = count;
-                cartBadge.style.transform = count > 0 ? 'scale(1)' : 'scale(0)';
+            const cartButton = document.getElementById('cart-button');
+            let span = document.getElementById('cart-count');
+            
+            // Ensure span exists
+            if (!span && cartButton) {
+                span = document.createElement('span');
+                span.id = 'cart-count';
+                span.className = 'absolute -top-1 -right-1 inline-flex items-center justify-center h-5 w-5 text-xs font-bold text-white bg-red-600 rounded-full ring-2 ring-white shadow-sm animate-pulse';
+                cartButton.appendChild(span);
+            } else if(span) {
+                span.className = 'absolute -top-1 -right-1 inline-flex items-center justify-center h-5 w-5 text-xs font-bold text-white bg-red-600 rounded-full ring-2 ring-white shadow-sm';
+                if(count > 0) span.classList.add('animate-bounce'); // bounce on update
+                setTimeout(() => span?.classList.remove('animate-bounce'), 1000);
+            }
+
+            if (span) {
+                span.textContent = count > 0 ? count : '';
+                span.classList.toggle('hidden', count === 0);
             }
         };
 
@@ -313,20 +306,20 @@
             const quantity = parseInt(document.getElementById('quantity').value, 10);
 
             if (!selectedSize || quantity <= 0) {
-                showMessage("Notice", "Please select a size and quantity.", true);
+                showMessage("Selection Required", "Please select a size and valid quantity.", true);
                 return;
             }
             if (currentProduct.stock[selectedSize] < quantity) {
-                showMessage("Stock Alert", `Only ${currentProduct.stock[selectedSize]} left in this size.`, true);
+                showMessage("Stock Limitation", `Only ${currentProduct.stock[selectedSize]} units of this size are available.`, true);
                 return;
             }
 
             const key = `${currentProduct.id}_${selectedSize}`;
             const existingItem = currentCart[key];
+
             const newTotalQuantity = existingItem ? existingItem.quantity + quantity : quantity;
-            
             if (currentProduct.stock[selectedSize] < newTotalQuantity) {
-                showMessage("Stock Alert", "Cannot add more than available stock.", true);
+                showMessage("Stock Limitation", `You already have units in cart. Adding more exceeds available stock.`, true);
                 return;
             }
             
@@ -339,7 +332,7 @@
                 image: currentProduct.images?.[0]
             };
 
-            showMessage("Success", "Added to cart!", false);
+            showMessage("Added to Cart", `<div class="flex flex-col items-center"><img src="${currentProduct.images?.[0]}" class="w-16 h-16 object-cover rounded-md mb-2"><span class="font-medium">${quantity} x ${currentProduct.name} (${selectedSize})</span></div>`, false);
             updateCartCount();
         };
         
@@ -357,10 +350,12 @@
         window.handleSearch = (query) => {
             const term = query.toLowerCase().trim();
             const productsArray = Object.values(products);
+            
             if (term === '') {
                 renderProducts(productsArray);
                 return;
             }
+
             const filteredProducts = productsArray.filter(p => 
                 p.name.toLowerCase().includes(term) || 
                 p.description.toLowerCase().includes(term)
@@ -374,9 +369,12 @@
 
             if (productsToRender.length === 0) {
                 container.innerHTML = `
-                    <div class="col-span-full flex flex-col items-center justify-center py-20 text-gray-400">
-                        <i class="ph ph-magnifying-glass text-6xl mb-4"></i>
-                        <p class="text-lg">No products found matching your search.</p>
+                    <div class="col-span-full text-center py-20 animate-fade-in">
+                        <div class="inline-block p-6 rounded-full bg-gray-100 mb-4">
+                            <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        <p class="text-lg text-gray-600 font-medium">No products found.</p>
+                        <p class="text-sm text-gray-500 mt-1">Try adjusting your search.</p>
                     </div>`;
                 return;
             }
@@ -387,33 +385,36 @@
                 if (isDiscounted) {
                     discountPercentage = ((1 - (p.price / p.oldPrice)) * 100).toFixed(0);
                 }
+                const discountBadge = isDiscounted ? `<span class="absolute top-3 left-3 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md z-10">-${discountPercentage}%</span>` : '';
+                
                 const productLink = `product/${p.slug || p.id}`;
 
                 return `
-                    <div class="group bg-white rounded-2xl border border-gray-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
-                         onclick="window.location.hash='#${productLink}'">
-                        <div class="relative aspect-square overflow-hidden bg-gray-100">
-                             ${isDiscounted ? `<span class="absolute top-3 left-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-lg z-10 shadow-sm">-${discountPercentage}%</span>` : ''}
-                            <img src="${p.images?.[0] || 'https://placehold.co/400x400/f3f4f6/9ca3af?text=No+Image'}"
-                                 alt="${p.name}" 
-                                 class="w-full h-full object-cover group-hover:scale-105 transition duration-700 ease-in-out">
+                    <div class="group bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 animate-slide-up flex flex-col">
+                        <div class="relative aspect-square overflow-hidden bg-gray-100 cursor-pointer" onclick="window.location.hash='#${productLink}'">
+                            ${discountBadge}
+                            <img src="${p.images?.[0] || 'https://placehold.co/400x400/fce7f3/8a3324?text=No+Image'}"
+                                 alt="${p.name}" class="w-full h-full object-cover transition duration-700 group-hover:scale-110">
                             
-                            <div class="absolute inset-x-0 bottom-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden md:block bg-gradient-to-t from-black/50 to-transparent">
-                                <button class="w-full bg-white text-gray-900 font-bold py-2 rounded-lg shadow-lg hover:bg-gray-50 flex items-center justify-center gap-2">
-                                    <i class="ph ph-shopping-bag"></i> View Details
-                                </button>
+                            <!-- Quick View Overlay (Desktop) -->
+                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                <span class="bg-white text-gray-900 text-sm font-semibold px-4 py-2 rounded-full shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">View Details</span>
                             </div>
                         </div>
                         
-                        <div class="p-4">
-                            <h3 class="text-gray-800 font-semibold truncate mb-1 group-hover:text-brand-600 transition-colors">${p.name}</h3>
-                            <div class="flex items-end gap-2">
-                                <span class="text-lg font-bold text-brand-600">৳${p.price.toLocaleString('en-US')}</span>
-                                ${isDiscounted 
-                                    ? `<span class="text-sm text-gray-400 line-through mb-1">৳${p.oldPrice.toLocaleString('en-US')}</span>`
-                                    : ''
-                                }
+                        <div class="p-5 flex flex-col flex-grow">
+                            <h3 class="text-base font-semibold text-gray-800 mb-1 line-clamp-1 group-hover:text-primary transition-colors">${p.name}</h3>
+                            
+                            <div class="flex items-baseline space-x-2 mt-auto">
+                                <span class="text-xl font-bold text-primary">BDT ${p.price.toLocaleString('en-US')}</span>
+                                ${isDiscounted ? `<span class="text-sm line-through text-gray-400">BDT ${p.oldPrice.toLocaleString('en-US')}</span>` : ''}
                             </div>
+                            
+                            <button onclick="event.stopPropagation(); window.location.hash='#${productLink}'"
+                                    class="mt-4 w-full py-2.5 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-primary transition-colors duration-300 flex items-center justify-center gap-2">
+                                <span>Buy Now</span>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                            </button>
                         </div>
                     </div>
                 `;
@@ -432,93 +433,95 @@
             
             const view = document.getElementById('product-view');
             
-            // Size Options
             const sizeOptions = sizes.length > 0 ? sizes.map(size => `
                 <label class="cursor-pointer group">
                     <input type="radio" name="productSize" value="${size}" class="peer sr-only" required>
-                    <div class="w-12 h-12 flex items-center justify-center rounded-xl border border-gray-200 text-gray-600 font-medium 
-                                peer-checked:bg-brand-500 peer-checked:text-white peer-checked:border-brand-500
-                                hover:border-brand-500 transition-all">
+                    <span class="block w-12 h-12 flex items-center justify-center border-2 border-gray-200 rounded-lg text-sm font-semibold text-gray-600 peer-checked:border-primary peer-checked:bg-primary peer-checked:text-white group-hover:border-gray-400 transition-all">
                         ${size}
-                    </div>
+                    </span>
                 </label>
-            `).join('') : '<span class="text-red-500 bg-red-50 px-3 py-1 rounded-lg text-sm font-medium">Out of Stock</span>';
+            `).join('') : '<p class="text-red-500 font-semibold bg-red-50 px-4 py-2 rounded-lg inline-block">Out of Stock</p>';
 
-            // Gallery
             const galleryHtml = (p.images || []).map((imgUrl, index) => `
-                <div class="aspect-square rounded-xl overflow-hidden border border-gray-100 cursor-pointer hover:border-brand-500 transition-colors"
-                     onclick="document.getElementById('main-product-image').src = '${imgUrl}'">
-                    <img src="${imgUrl}" class="w-full h-full object-cover">
-                </div>
+                <button onclick="document.getElementById('main-product-image').src = '${imgUrl}'" 
+                        class="flex-shrink-0 w-20 h-20 rounded-lg overflow-hidden border-2 border-transparent hover:border-primary transition-all focus:border-primary focus:outline-none">
+                    <img src="${imgUrl}" alt="Thumbnail ${index}" class="w-full h-full object-cover">
+                </button>
             `).join('');
 
-            view.innerHTML = `
-                <div class="max-w-6xl mx-auto animate-slide-up">
-                    <div class="flex items-center text-sm text-gray-500 mb-6 gap-2">
-                        <button onclick="window.location.hash='#home'" class="hover:text-brand-600">Home</button>
-                        <i class="ph ph-caret-right"></i>
-                        <span class="text-gray-900 font-medium truncate">${p.name}</span>
-                    </div>
+            const shareUrl = window.location.href;
 
-                    <div class="grid lg:grid-cols-2 gap-10 bg-white p-6 lg:p-8 rounded-3xl shadow-sm border border-gray-100">
-                        <div class="space-y-4">
-                            <div class="aspect-square rounded-2xl overflow-hidden bg-gray-50 border border-gray-100 relative group">
-                                <img id="main-product-image" src="${p.images?.[0]}" class="w-full h-full object-cover">
-                                <button onclick="copyToClipboard('${window.location.href}')" class="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur rounded-full shadow-sm hover:bg-white transition text-gray-600" title="Share">
-                                    <i class="ph ph-share-network text-xl"></i>
+            view.innerHTML = `
+                <div class="max-w-6xl mx-auto animate-fade-in">
+                    <!-- Breadcrumb -->
+                    <nav class="flex mb-6 text-sm text-gray-500">
+                        <a href="#home" class="hover:text-primary transition-colors">Home</a>
+                        <span class="mx-2">/</span>
+                        <span class="text-gray-900 font-medium truncate">${p.name}</span>
+                    </nav>
+
+                    <div class="bg-white rounded-2xl shadow-xl overflow-hidden grid md:grid-cols-2 gap-0">
+                        <!-- Left: Images -->
+                        <div class="p-6 md:p-8 bg-gray-50 flex flex-col">
+                            <div class="aspect-square rounded-xl overflow-hidden bg-white shadow-sm mb-4 relative group">
+                                <img id="main-product-image" src="${p.images?.[0] || 'https://placehold.co/600x800'}"
+                                     alt="${p.name}" class="w-full h-full object-cover">
+                                <button onclick="copyToClipboard('${shareUrl}')" class="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur rounded-full shadow-sm text-gray-600 hover:text-primary transition opacity-0 group-hover:opacity-100" title="Share Product">
+                                    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" /></svg>
                                 </button>
                             </div>
-                            <div class="grid grid-cols-5 gap-3">
+                            <div class="flex space-x-3 overflow-x-auto no-scrollbar py-2">
                                 ${galleryHtml}
                             </div>
                         </div>
 
-                        <div class="flex flex-col">
-                            <h1 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-4 leading-tight">${p.name}</h1>
+                        <!-- Right: Details -->
+                        <div class="p-6 md:p-10 flex flex-col h-full">
+                            <h1 class="text-3xl md:text-4xl font-serif font-bold text-gray-900 mb-2 leading-tight">${p.name}</h1>
                             
-                            <div class="flex items-center gap-4 mb-8">
-                                <span class="text-4xl font-bold text-brand-600">৳${p.price.toLocaleString('en-US')}</span>
-                                ${isDiscounted 
-                                    ? `<div class="flex flex-col">
-                                        <span class="text-lg text-gray-400 line-through">৳${p.oldPrice.toLocaleString('en-US')}</span>
-                                        <span class="text-sm font-bold text-red-500">Save ${((1 - (p.price / p.oldPrice)) * 100).toFixed(0)}%</span>
-                                       </div>`
-                                    : ''
-                                }
+                            <div class="flex items-center space-x-4 mb-8">
+                                <span class="text-3xl font-bold text-primary">BDT ${p.price.toLocaleString('en-US')}</span>
+                                ${isDiscounted ? `<span class="text-xl line-through text-gray-400">BDT ${p.oldPrice.toLocaleString('en-US')}</span>` : ''}
+                                ${isDiscounted ? `<span class="bg-red-100 text-red-700 text-xs font-bold px-2 py-1 rounded-md">Save BDT ${(p.oldPrice - p.price).toLocaleString()}</span>` : ''}
                             </div>
                             
-                            <form id="product-purchase-form" onsubmit="event.preventDefault(); handleAddToCart()" class="space-y-8 flex-grow">
-                                <div>
-                                    <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">Select Size</h3>
-                                    <div class="flex flex-wrap gap-3">
+                            <form id="product-purchase-form" onsubmit="event.preventDefault(); handleAddToCart()" class="flex-grow">
+                                <div class="mb-8">
+                                    <div class="flex justify-between items-center mb-3">
+                                        <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wide">Select Size</h3>
+                                        <span class="text-xs text-primary cursor-pointer hover:underline">Size Guide</span>
+                                    </div>
+                                    <div class="flex flex-wrap gap-3" id="size-options-container">
                                         ${sizeOptions}
                                     </div>
                                 </div>
                                 
-                                <div>
-                                    <h3 class="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">Quantity</h3>
-                                    <div class="flex items-center border border-gray-200 rounded-xl w-32 overflow-hidden">
-                                        <button type="button" onclick="document.getElementById('quantity').stepDown()" class="p-3 hover:bg-gray-50 text-gray-600"><i class="ph ph-minus"></i></button>
-                                        <input type="number" id="quantity" value="1" min="1" max="10" class="w-full text-center border-none focus:ring-0 p-0 text-gray-900 font-bold">
-                                        <button type="button" onclick="document.getElementById('quantity').stepUp()" class="p-3 hover:bg-gray-50 text-gray-600"><i class="ph ph-plus"></i></button>
+                                <div class="mb-8">
+                                    <label for="quantity" class="block text-sm font-bold text-gray-900 uppercase tracking-wide mb-3">Quantity</label>
+                                    <div class="flex items-center border border-gray-300 rounded-lg w-32 overflow-hidden">
+                                        <button type="button" onclick="document.getElementById('quantity').stepDown()" class="w-10 h-10 flex items-center justify-center bg-gray-50 hover:bg-gray-100 active:bg-gray-200 transition">-</button>
+                                        <input type="number" id="quantity" value="1" min="1" max="10" required class="w-full h-10 text-center border-0 focus:ring-0 p-0 text-gray-900 font-semibold">
+                                        <button type="button" onclick="document.getElementById('quantity').stepUp()" class="w-10 h-10 flex items-center justify-center bg-gray-50 hover:bg-gray-100 active:bg-gray-200 transition">+</button>
                                     </div>
                                 </div>
-
-                                <div class="grid grid-cols-2 gap-4 pt-4">
+                                
+                                <div class="grid grid-cols-1 gap-3 mt-auto">
                                     <button type="submit" ${sizes.length === 0 ? 'disabled' : ''}
-                                            class="py-4 rounded-xl border-2 border-brand-500 text-brand-600 font-bold text-lg hover:bg-brand-50 transition disabled:opacity-50 disabled:cursor-not-allowed">
+                                            class="w-full py-4 bg-gray-900 text-white rounded-xl font-bold text-lg hover:bg-gray-800 transition shadow-lg transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
                                         Add to Cart
                                     </button>
-                                    <button type="button" onclick="handleAddToCart(); setTimeout(() => window.location.hash='#checkout', 100)" ${sizes.length === 0 ? 'disabled' : ''}
-                                            class="py-4 rounded-xl bg-brand-500 text-white font-bold text-lg hover:bg-brand-600 shadow-lg shadow-brand-500/30 transition disabled:opacity-50 disabled:cursor-not-allowed">
+
+                                    <button type="button" onclick="window.location.hash='#checkout'"
+                                            class="w-full py-4 bg-primary text-white rounded-xl font-bold text-lg hover:bg-primary-dark transition shadow-lg transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed">
                                         Buy Now
                                     </button>
                                 </div>
                             </form>
 
-                            <div class="mt-10 pt-8 border-t border-gray-100">
-                                <h3 class="text-lg font-bold mb-3">Description</h3>
-                                <p class="text-gray-600 leading-relaxed whitespace-pre-wrap">${p.description}</p>
+                            <div class="mt-8 pt-8 border-t border-gray-100">
+                                <h3 class="text-sm font-bold text-gray-900 uppercase mb-2">Description</h3>
+                                <p class="text-gray-600 leading-relaxed whitespace-pre-wrap text-sm">${p.description}</p>
                             </div>
                         </div>
                     </div>
@@ -528,123 +531,133 @@
         };
 
         // --- Checkout View Logic ---
-        const DELIVERY_CHARGE = { 'Inside Dhaka': 110, 'Outside Dhaka': 130 };
+        
+        const DELIVERY_CHARGE = {
+            'Inside Dhaka': 110,
+            'Outside Dhaka': 130
+        };
 
         window.renderCheckout = () => {
             const items = Object.values(currentCart);
             if (items.length === 0) {
-                showMessage("Empty Cart", "Your cart is empty.", true);
+                showMessage("Cart Empty", "Your cart is empty. Start shopping!", true);
                 window.location.hash='#home';
                 return;
             }
 
             const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
             
-            const cartItemsHtml = items.map(item => `
-                <div class="flex gap-4 py-4 border-b border-gray-50 last:border-0">
-                    <div class="w-16 h-16 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
-                        <img src="${item.image}" class="w-full h-full object-cover">
-                    </div>
-                    <div class="flex-grow">
-                        <div class="flex justify-between items-start">
-                            <h4 class="font-semibold text-gray-800 line-clamp-1">${item.name}</h4>
-                            <span class="font-bold text-gray-900">৳${(item.price * item.quantity).toLocaleString()}</span>
+            const cartDetails = items.map(item => {
+                const itemKey = `${item.id}_${item.size}`;
+                return `
+                    <div class="flex items-center gap-4 py-4 border-b border-gray-100 last:border-0">
+                        <div class="w-16 h-16 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 border border-gray-200">
+                            <img src="${item.image}" alt="${item.name}" class="w-full h-full object-cover">
                         </div>
-                        <p class="text-sm text-gray-500">Size: ${item.size} × ${item.quantity}</p>
-                        <button onclick="handleRemoveFromCart('${item.id}_${item.size}')" class="text-xs text-red-500 hover:text-red-600 font-medium mt-1 flex items-center gap-1">
-                            <i class="ph ph-trash"></i> Remove
-                        </button>
+                        <div class="flex-grow min-w-0">
+                            <h4 class="font-semibold text-gray-900 truncate">${item.name}</h4>
+                            <p class="text-sm text-gray-500">Size: ${item.size} <span class="mx-1">•</span> Qty: ${item.quantity}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-gray-900">৳${(item.price * item.quantity).toLocaleString()}</p>
+                            <button onclick="handleRemoveFromCart('${itemKey}')" class="text-xs text-red-500 hover:underline mt-1">Remove</button>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
 
             const checkoutView = document.getElementById('checkout-view');
             checkoutView.innerHTML = `
-                <div class="max-w-5xl mx-auto grid lg:grid-cols-5 gap-8 animate-slide-up">
-                    <div class="lg:col-span-3 space-y-6">
+                <div class="max-w-5xl mx-auto grid lg:grid-cols-12 gap-8 animate-fade-in">
+                    <!-- Left Column: Form -->
+                    <div class="lg:col-span-7">
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                            <h2 class="text-xl font-bold mb-6 flex items-center gap-2"><i class="ph ph-user-circle text-2xl text-brand-600"></i> Shipping Details</h2>
-                            <form id="checkout-form" onsubmit="event.preventDefault(); handleCheckoutSubmit(event)" class="space-y-4">
-                                <div class="grid md:grid-cols-2 gap-4">
+                            <h2 class="text-2xl font-serif font-bold text-gray-900 mb-6">Shipping Details</h2>
+                            <form id="checkout-form" onsubmit="event.preventDefault(); handleCheckoutSubmit(event)">
+                                <div class="space-y-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                                        <input type="text" id="fullName" required class="w-full p-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white transition" placeholder="Your Name">
+                                        <input type="text" id="fullName" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-primary focus:border-transparent transition outline-none" placeholder="John Doe">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                                        <input type="tel" id="phone" required class="w-full p-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white transition" placeholder="017...">
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Detailed Address</label>
-                                    <textarea id="address" rows="2" required class="w-full p-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white transition" placeholder="House, Road, Area..."></textarea>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Delivery Area</label>
-                                    <div class="grid grid-cols-2 gap-4">
-                                        <label class="cursor-pointer">
-                                            <input type="radio" name="location" value="Inside Dhaka" checked onchange="updateDeliveryCharge(${subtotal})" class="peer sr-only">
-                                            <div class="p-3 rounded-xl border border-gray-200 peer-checked:border-brand-500 peer-checked:bg-brand-50 transition text-center">
-                                                <span class="block font-semibold text-sm">Inside Dhaka</span>
-                                                <span class="text-xs text-gray-500">৳110</span>
-                                            </div>
-                                        </label>
-                                        <label class="cursor-pointer">
-                                            <input type="radio" name="location" value="Outside Dhaka" onchange="updateDeliveryCharge(${subtotal})" class="peer sr-only">
-                                            <div class="p-3 rounded-xl border border-gray-200 peer-checked:border-brand-500 peer-checked:bg-brand-50 transition text-center">
-                                                <span class="block font-semibold text-sm">Outside Dhaka</span>
-                                                <span class="text-xs text-gray-500">৳130</span>
-                                            </div>
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <div class="pt-6 mt-6 border-t border-gray-100">
-                                    <h2 class="text-xl font-bold mb-4 flex items-center gap-2"><i class="ph ph-wallet text-2xl text-brand-600"></i> Payment</h2>
-                                    <div class="bg-pink-50 border border-pink-200 rounded-xl p-4 mb-4">
-                                        <p class="text-sm text-pink-800 font-medium mb-1">Send Delivery Charge to bKash Personal:</p>
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-xl font-bold text-brand-600">01401603157</span>
-                                            <button type="button" onclick="copyToClipboard('01401603157')" class="text-gray-500 hover:text-brand-600"><i class="ph ph-copy"></i></button>
-                                        </div>
+                                        <input type="tel" id="phone" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-primary focus:border-transparent transition outline-none" placeholder="+880 1XXX NNNNNN">
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1">bKash Transaction ID (TrxID)</label>
-                                        <input type="text" id="transactionId" required placeholder="e.g. 8H3..." class="w-full p-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white transition uppercase">
+                                        <label class="block text-sm font-medium text-gray-700 mb-1">Full Address</label>
+                                        <textarea id="address" rows="3" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-primary focus:border-transparent transition outline-none" placeholder="House, Road, Area, City"></textarea>
+                                    </div>
+                                    
+                                    <div class="pt-4">
+                                        <label class="block text-sm font-medium text-gray-700 mb-3">Delivery Location</label>
+                                        <div class="grid grid-cols-2 gap-4">
+                                            <label class="relative cursor-pointer">
+                                                <input type="radio" name="location" value="Inside Dhaka" checked onchange="updateDeliveryCharge(${subtotal})" class="peer sr-only">
+                                                <div class="p-4 rounded-xl border-2 border-gray-200 hover:bg-gray-50 peer-checked:border-primary peer-checked:bg-red-50 transition text-center">
+                                                    <span class="block font-semibold text-gray-900">Inside Dhaka</span>
+                                                    <span class="text-sm text-gray-500">৳110</span>
+                                                </div>
+                                            </label>
+                                            <label class="relative cursor-pointer">
+                                                <input type="radio" name="location" value="Outside Dhaka" onchange="updateDeliveryCharge(${subtotal})" class="peer sr-only">
+                                                <div class="p-4 rounded-xl border-2 border-gray-200 hover:bg-gray-50 peer-checked:border-primary peer-checked:bg-red-50 transition text-center">
+                                                    <span class="block font-semibold text-gray-900">Outside Dhaka</span>
+                                                    <span class="text-sm text-gray-500">৳130</span>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="pt-6 mt-6 border-t border-gray-100">
+                                        <h3 class="text-lg font-bold text-gray-900 mb-4">Payment</h3>
+                                        <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4">
+                                            <p class="text-sm text-yellow-800 mb-2">Please Send Money (Delivery Charge) to confirm order:</p>
+                                            <div class="flex items-center justify-between bg-white p-3 rounded-lg border border-yellow-100 mb-2">
+                                                <span class="font-mono font-bold text-lg text-gray-800">01401603157</span>
+                                                <span class="text-xs font-bold text-primary bg-red-100 px-2 py-1 rounded">bKash Personal</span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 mb-1">Transaction ID (Trx ID)</label>
+                                            <input type="text" id="transactionId" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-primary focus:border-transparent transition outline-none font-mono placeholder-gray-400 uppercase" placeholder="8G2Y1A0B...">
+                                        </div>
                                     </div>
                                 </div>
-
-                                <button type="submit" class="hidden" id="real-submit"></button>
                             </form>
                         </div>
                     </div>
 
-                    <div class="lg:col-span-2">
+                    <!-- Right Column: Summary -->
+                    <div class="lg:col-span-5">
                         <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 sticky top-24">
-                            <h3 class="font-bold text-lg mb-4">Order Summary</h3>
-                            <div class="max-h-64 overflow-y-auto hide-scrollbar mb-4">
-                                ${cartItemsHtml}
+                            <h2 class="text-xl font-bold text-gray-900 mb-4">Order Summary</h2>
+                            <div class="mb-4 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                                ${cartDetails}
                             </div>
                             
-                            <div class="space-y-3 pt-4 border-t border-gray-100 text-sm">
+                            <div class="space-y-3 py-4 border-t border-gray-100">
                                 <div class="flex justify-between text-gray-600">
                                     <span>Subtotal</span>
                                     <span>৳${subtotal.toLocaleString()}</span>
                                 </div>
                                 <div class="flex justify-between text-gray-600">
                                     <span>Delivery</span>
-                                    <span id="delivery-charge-display" class="font-medium">৳110</span>
+                                    <span id="delivery-charge-display">৳0</span>
                                 </div>
-                                <div class="flex justify-between text-xl font-bold text-gray-900 pt-2 border-t">
+                                <div class="flex justify-between text-xl font-bold text-gray-900 pt-3 border-t border-gray-100">
                                     <span>Total</span>
-                                    <span id="total-amount-display" class="text-brand-600">৳${(subtotal + 110).toLocaleString()}</span>
+                                    <span id="total-amount-display" class="text-primary">৳${subtotal.toLocaleString()}</span>
                                 </div>
                             </div>
-
-                            <button onclick="document.getElementById('real-submit').click()" class="w-full mt-6 py-4 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl shadow-lg shadow-brand-500/30 transition transform active:scale-95">
+                            
+                            <button onclick="document.getElementById('checkout-form').requestSubmit()" class="w-full mt-6 py-4 bg-gray-900 text-white rounded-xl font-bold text-lg hover:bg-primary transition-colors shadow-lg transform active:scale-[0.98]">
                                 Confirm Order
                             </button>
-                            <p class="text-xs text-center text-gray-400 mt-3">Secure checkout powered by Trendy</p>
+                            
+                            <p class="text-xs text-gray-400 text-center mt-4 flex items-center justify-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                                Secure Checkout
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -654,16 +667,12 @@
         };
 
         window.updateDeliveryCharge = (subtotal) => {
-            const locationInput = document.querySelector('input[name="location"]:checked');
-            if(!locationInput) return;
-            
-            const location = locationInput.value;
+            const location = document.querySelector('input[name="location"]:checked').value;
             const charge = DELIVERY_CHARGE[location];
             const total = subtotal + charge;
 
-            document.getElementById('delivery-charge-display').textContent = `৳${charge}`;
+            document.getElementById('delivery-charge-display').textContent = `৳${charge.toLocaleString()}`;
             document.getElementById('total-amount-display').textContent = `৳${total.toLocaleString()}`;
-            
             const form = document.getElementById('checkout-form');
             form.dataset.deliveryCharge = charge;
             form.dataset.totalAmount = total;
@@ -675,80 +684,111 @@
             const items = Object.values(currentCart);
             const phoneNumber = document.getElementById('phone').value;
 
-            if (items.length === 0) return;
-
-            // Show loading state
-            const btn = document.querySelector('button[onclick*="real-submit"]');
-            const originalBtnText = btn.innerText;
-            btn.innerText = "Processing...";
-            btn.disabled = true;
+            if (items.length === 0) {
+                showMessage("Error", "Cart is empty.", true);
+                return;
+            }
 
             const orderId = generateOrderId(phoneNumber);
             const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0); 
             const deliveryCharge = parseInt(form.dataset.deliveryCharge, 10);
             const totalAmount = parseInt(form.dataset.totalAmount, 10);
+            const location = form.dataset.location;
+            
+            const savedItems = items.map(item => ({
+                productId: item.id,
+                name: item.name,
+                size: item.size,
+                quantity: item.quantity,
+                price: item.price 
+            }));
             
             const newOrder = {
-                orderId, 
+                orderId: orderId, 
                 customerName: document.getElementById('fullName').value,
                 phone: phoneNumber,
                 address: document.getElementById('address').value,
-                location: form.dataset.location,
-                deliveryCharge,
+                location: location,
+                deliveryCharge: deliveryCharge,
                 transactionId: document.getElementById('transactionId').value,
-                items: items.map(i => ({ productId: i.id, name: i.name, size: i.size, quantity: i.quantity, price: i.price })),
-                subtotal,
-                totalAmount,
+                items: savedItems,
+                subtotal: subtotal,
+                totalAmount: totalAmount,
                 status: 'Confirmed', 
                 timestamp: serverTimestamp(),
                 customer_uid: userId 
             };
 
+            const ordersRef = getPublicCollectionRef('orders');
+            const productsRef = getPublicCollectionRef('products');
+            
+            // Loading state
+            const submitBtn = document.querySelector('#checkout-view button[onclick*="requestSubmit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<svg class="animate-spin h-5 w-5 mr-2 inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processing...`;
+
             try {
                 await runTransaction(db, async (transaction) => {
                     const productUpdates = [];
                     for (const item of items) {
-                        const ref = doc(getPublicCollectionRef('products'), item.id);
-                        const snap = await transaction.get(ref);
-                        if (!snap.exists()) throw new Error(`Product ${item.name} unavailable.`);
+                        const productDocRef = doc(productsRef, item.id);
+                        const productDoc = await transaction.get(productDocRef);
                         
-                        const stock = snap.data().stock;
-                        const currentStock = stock[item.size] || 0;
-                        if (currentStock < item.quantity) throw new Error(`Insufficient stock for ${item.name}.`);
+                        if (!productDoc.exists()) throw new Error(`Product ${item.name} unavailable.`);
+                        
+                        const productData = productDoc.data();
+                        const currentStock = productData.stock[item.size] || 0;
+                        
+                        if (currentStock < item.quantity) throw new Error(`Insufficient stock for ${item.name} (${item.size}). Available: ${currentStock}`);
 
-                        productUpdates.push({ ref, stock: { ...stock, [item.size]: currentStock - item.quantity } });
+                        const newStock = { ...productData.stock, [item.size]: currentStock - item.quantity };
+                        productUpdates.push({ ref: productDocRef, stock: newStock });
                     }
-                    productUpdates.forEach(u => transaction.update(u.ref, { stock: u.stock }));
-                    transaction.set(doc(getPublicCollectionRef('orders'), orderId), newOrder); 
+
+                    for (const update of productUpdates) {
+                        transaction.update(update.ref, { stock: update.stock });
+                    }
+                    transaction.set(doc(ordersRef, orderId), newOrder); 
+                    return true;
                 });
 
-                showMessage("Order Confirmed!", `Order ID: <b>${orderId}</b><br>We will contact you shortly.`, false);
+                showMessage("Order Successful!", 
+                    `<div class="text-center"><div class="text-5xl mb-2">🎉</div><p>Thank you, ${newOrder.customerName}!</p><p class="text-sm text-gray-500 my-2">Your Order ID</p><div class="bg-gray-100 p-3 rounded-lg font-mono text-xl font-bold text-primary select-all">${orderId}</div><p class="text-xs text-gray-400 mt-2">Save this ID to track your order.</p></div>`,
+                    false
+                );
                 currentCart = {}; 
                 updateCartCount(); 
                 window.location.hash='#home';
 
             } catch (error) {
-                console.error(error);
-                showMessage("Order Failed", error.message, true);
+                console.error("Order Transaction Failed:", error);
+                showMessage("Order Failed", `Error: ${error.message}`, true);
             } finally {
-                btn.innerText = originalBtnText;
-                btn.disabled = false;
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
             }
         };
 
-        // --- Admin Logic (Preserved functionality, minimal UI tweaks) ---
+        // --- Admin View Logic ---
+
         window.handleAdminLogin = async () => {
             const email = document.getElementById('admin-email').value;
             const password = document.getElementById('admin-password').value;
+
             try {
-                const cred = await signInWithEmailAndPassword(auth, email, password);
-                if (cred.user.email === ADMIN_EMAIL) {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                if (userCredential.user.email === ADMIN_EMAIL) {
+                    showMessage("Success", `Welcome back, Admin!`, false);
                     checkUrlHash(); 
                 } else {
                     await signOut(auth); 
-                    showMessage("Access Denied", "Not an admin account.", true);
+                    showMessage("Access Denied", "Your account does not have administrator privileges.", true);
                 }
-            } catch (e) { showMessage("Error", "Invalid credentials.", true); }
+            } catch (error) {
+                console.error("Admin Login Failed:", error);
+                showMessage("Login Failed", "Invalid credentials.", true);
+            }
         };
 
         window.handleAdminLogout = async () => {
@@ -759,8 +799,10 @@
         
         window.showAdminView = () => {
             const isAdmin = auth.currentUser?.email === ADMIN_EMAIL;
+            
             document.getElementById('admin-login-form').classList.toggle('view-hidden', isAdmin);
             document.getElementById('admin-content').classList.toggle('view-hidden', !isAdmin);
+
             if (isAdmin) {
                 renderAdminProducts();
                 document.getElementById('admin-email-field').textContent = auth.currentUser.email;
@@ -768,31 +810,207 @@
             showView('admin-view');
         };
 
+        // --- Admin Product Management ---
+
         window.renderAdminProducts = () => {
             const container = document.getElementById('admin-product-list');
             if (!container) return;
             
-            container.innerHTML = Object.values(products).map(p => `
-                <div class="flex flex-col md:flex-row items-center gap-4 p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
-                    <div class="flex-grow">
-                        <h4 class="font-bold text-gray-800">${p.name}</h4>
-                        <p class="text-xs text-gray-500 font-mono">/${p.slug || p.id}</p>
-                        <div class="flex gap-4 mt-1 text-sm">
-                            <span class="font-semibold text-brand-600">৳${p.price}</span>
-                            <span class="text-gray-500">Stock: ${Object.entries(p.stock || {}).map(([s,q])=>`${s}:${q}`).join(', ')}</span>
+            let listHTML = `<div class="grid gap-4">`;
+
+            Object.values(products).forEach(p => {
+                const stockSummary = Object.entries(p.stock || {}).map(([s, q]) => `<span class="bg-gray-100 px-2 py-1 rounded text-xs">${s}:${q}</span>`).join(' ');
+                const productUrl = `${window.location.origin}/#product/${p.slug || p.id}`;
+                
+                listHTML += `
+                    <div class="p-4 border border-gray-200 rounded-xl bg-white flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm">
+                        <div class="flex items-center gap-4">
+                             <img src="${p.images?.[0]}" class="w-12 h-12 rounded-md object-cover bg-gray-100">
+                             <div>
+                                <h4 class="font-bold text-gray-900">${p.name}</h4>
+                                <p class="text-xs text-gray-500 font-mono truncate w-40">${p.slug || p.id}</p>
+                                <div class="flex gap-2 mt-1 text-sm text-gray-600">
+                                    <span class="font-semibold text-primary">৳${p.price}</span>
+                                    <span class="flex gap-1 flex-wrap">${stockSummary}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2 w-full md:w-auto">
+                            <button onclick="copyToClipboard('${productUrl}')" class="flex-1 md:flex-none px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-sm hover:bg-gray-200">Link</button>
+                            <button onclick="editProduct('${p.id}')" class="flex-1 md:flex-none px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-sm hover:bg-blue-100 font-medium">Edit</button>
+                            <button onclick="deleteProduct('${p.id}')" class="flex-1 md:flex-none px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-sm hover:bg-red-100 font-medium">Delete</button>
                         </div>
                     </div>
-                    <div class="flex gap-2">
-                        <button onclick="editProduct('${p.id}')" class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"><i class="ph ph-pencil-simple"></i></button>
-                        <button onclick="deleteProduct('${p.id}')" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100"><i class="ph ph-trash"></i></button>
-                    </div>
-                </div>
-            `).join('');
+                `;
+            });
+            listHTML += `</div>`;
+            container.innerHTML = listHTML;
             renderAdminOrders();
         };
 
-        // Admin Form Logic
-        window.generateSlugFromName = (name) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+        // --- Admin Order Management ---
+        window.updateOrderStatus = async (orderId, newStatus) => {
+            try {
+                const ordersRef = getPublicCollectionRef('orders');
+                await updateDoc(doc(ordersRef, orderId), { status: newStatus });
+                showMessage("Success", `Order updated.`);
+            } catch (error) {
+                showMessage("Error", "Failed to update status.", true);
+            }
+        };
+
+        window.deleteOrder = async (orderId) => {
+             if(!confirm('Are you sure you want to delete this order?')) return;
+            try {
+                const ordersRef = getPublicCollectionRef('orders');
+                await deleteDoc(doc(ordersRef, orderId));
+                showMessage("Success", `Order deleted.`);
+            } catch (error) {
+                showMessage("Error", "Failed to delete order.", true);
+            }
+        };
+
+        window.renderAdminOrders = () => {
+            const container = document.getElementById('admin-order-list');
+            if (!container) return;
+            
+            if (allOrders.length === 0) {
+                container.innerHTML = `<p class="text-center text-gray-400 py-8">No orders found.</p>`;
+                return;
+            }
+
+            container.innerHTML = allOrders.map(order => {
+                const timestamp = order.timestamp?.toDate ? order.timestamp.toDate().toLocaleString() : 'N/A';
+                const itemsList = order.items.map(i => `<div class="text-xs text-gray-600 border-b border-dashed border-gray-200 py-1 last:border-0">${i.name} <span class="text-gray-400">(${i.size} x ${i.quantity})</span></div>`).join('');
+                
+                let statusClass = 'bg-gray-100 text-gray-800';
+                if(order.status === 'Delivered') statusClass = 'bg-green-100 text-green-800';
+                if(order.status === 'Cancelled') statusClass = 'bg-red-100 text-red-800';
+                if(order.status === 'Confirmed') statusClass = 'bg-blue-100 text-blue-800';
+
+                return `
+                    <div class="p-5 border border-gray-200 rounded-xl bg-white shadow-sm">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <span class="font-mono font-bold text-lg text-primary">${order.orderId}</span>
+                                <p class="text-xs text-gray-400">${timestamp}</p>
+                            </div>
+                            <span class="px-2 py-1 rounded-md text-xs font-bold uppercase ${statusClass}">
+                                ${order.status}
+                            </span>
+                        </div>
+                        
+                        <div class="grid md:grid-cols-2 gap-4 mb-4">
+                            <div class="bg-gray-50 p-3 rounded-lg text-sm">
+                                <p class="font-bold text-gray-700 mb-1">Customer</p>
+                                <p>${order.customerName}</p>
+                                <p class="font-mono text-xs">${order.phone}</p>
+                                <p class="text-gray-500 truncate">${order.address}</p>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg text-sm">
+                                <p class="font-bold text-gray-700 mb-1">Payment</p>
+                                <p>Total: <span class="font-bold">৳${order.totalAmount}</span></p>
+                                <p class="text-xs text-gray-500">TrxID: <span class="font-mono text-red-500">${order.transactionId}</span></p>
+                            </div>
+                        </div>
+
+                        <div class="mb-4 bg-white border border-gray-100 rounded-lg p-2">
+                            ${itemsList}
+                        </div>
+                        
+                        <div class="flex items-center gap-2">
+                            <select onchange="updateOrderStatus('${order.orderId}', this.value)" class="flex-grow p-2 border rounded-lg text-sm bg-gray-50">
+                                ${ORDER_STATUSES.map(s => `<option value="${s}" ${s === order.status ? 'selected' : ''}>${s}</option>`).join('')}
+                            </select>
+                            <button onclick="deleteOrder('${order.orderId}')" class="p-2 text-red-500 hover:bg-red-50 rounded-lg transition" title="Delete Order">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        };
+        
+        // --- Order Tracking Logic ---
+        window.handleTrackOrder = async (event) => {
+            event.preventDefault();
+            const queryValue = document.getElementById('track-query').value.trim();
+            const resultContainer = document.getElementById('track-result');
+            resultContainer.innerHTML = '<div class="text-center py-4"><svg class="animate-spin h-6 w-6 text-primary mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>';
+
+            const ordersRef = getPublicCollectionRef('orders');
+            let q;
+
+            if (queryValue.toUpperCase().startsWith('TJ')) {
+                q = query(ordersRef, where('orderId', '==', queryValue.toUpperCase()));
+            } else {
+                q = query(ordersRef, where('phone', '==', queryValue));
+            }
+
+            try {
+                const querySnapshot = await getDocs(q);
+                const orders = [];
+                querySnapshot.forEach(doc => {
+                    orders.push({ id: doc.id, ...doc.data() });
+                });
+
+                if (orders.length === 0) {
+                    resultContainer.innerHTML = '<div class="bg-red-50 text-red-600 p-4 rounded-lg text-center font-medium">No order found. Please check details.</div>';
+                    return;
+                }
+
+                orders.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
+                const order = orders[0];
+                const statusSteps = ORDER_STATUSES.slice(0, 6); 
+                const currentIndex = statusSteps.indexOf(order.status);
+
+                const progressHTML = statusSteps.map((step, index) => {
+                    const isCompleted = index <= currentIndex;
+                    const isCurrent = index === currentIndex && order.status !== 'Delivered' && order.status !== 'Cancelled';
+                    
+                    return `
+                        <div class="flex relative pb-8 last:pb-0">
+                            <div class="h-full absolute left-3 top-3 -ml-px border-l-2 ${isCompleted && index < statusSteps.length - 1 ? 'border-green-500' : 'border-gray-200'}" style="${index === statusSteps.length -1 ? 'display:none':''}"></div>
+                            <div class="relative flex-shrink-0 w-6 h-6 bg-white rounded-full border-2 ${isCompleted ? 'border-green-500 bg-green-500' : 'border-gray-300'} flex items-center justify-center z-10">
+                                ${isCompleted ? '<svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>' : ''}
+                            </div>
+                            <div class="ml-4 min-w-0 flex-1">
+                                <p class="text-sm font-bold ${isCompleted ? 'text-gray-900' : 'text-gray-500'}">${step}</p>
+                                ${isCurrent ? '<span class="inline-block mt-1 px-2 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full animate-pulse">In Progress</span>' : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                resultContainer.innerHTML = `
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 animate-fade-in">
+                        <div class="flex justify-between items-center border-b border-gray-100 pb-4 mb-6">
+                            <div>
+                                <h3 class="font-bold text-gray-900">Order Status</h3>
+                                <p class="text-sm text-gray-500">ID: <span class="font-mono">${order.orderId}</span></p>
+                            </div>
+                            <span class="text-2xl">${order.status === 'Delivered' ? '🎁' : '🚚'}</span>
+                        </div>
+                        <div class="pl-2">
+                            ${progressHTML}
+                        </div>
+                        ${order.status === 'Cancelled' ? '<div class="mt-4 p-3 bg-red-50 text-red-700 text-center font-bold rounded-lg">Order Cancelled</div>' : ''}
+                    </div>
+                `;
+
+            } catch (error) {
+                console.error("Order Tracking Failed:", error);
+                resultContainer.innerHTML = '<p class="text-center text-red-500 font-semibold">System error. Try again later.</p>';
+            }
+        };
+        
+        // --- Admin Product Form Logic ---
+        
+        window.generateSlugFromName = (name) => {
+            return name.toLowerCase()
+                       .replace(/[^a-z0-9]+/g, '-') 
+                       .replace(/^-+|-+$/g, '');    
+        };
 
         window.setupAddEditForm = (product) => {
             const form = document.getElementById('add-edit-product-form');
@@ -805,415 +1023,420 @@
             
             if (product) {
                 form.name.value = product.name;
-                form.slug.value = product.slug || ''; 
+                form.slug.value = product.slug || '';
                 form.description.value = product.description;
                 form.price.value = product.price; 
                 form.oldPrice.value = product.oldPrice || ''; 
                 form.images.value = product.images?.join('\n') || '';
             }
 
-            const renderRow = (s='', q=0) => `
-                <div class="stock-size-group flex gap-2 mb-2">
-                    <input type="text" placeholder="Size" value="${s}" class="size-input p-2 border rounded-lg w-1/3">
-                    <input type="number" placeholder="Qty" value="${q}" min="0" class="qty-input p-2 border rounded-lg w-1/3">
-                    <button type="button" onclick="this.parentElement.remove(); updateHiddenStock()" class="p-2 bg-red-50 text-red-500 rounded-lg w-1/3">Remove</button>
-                </div>`;
-
-            const stockMap = product ? product.stock : {};
-            stockContainer.innerHTML = Object.entries(stockMap).map(([s, q]) => renderRow(s,q)).join('');
-            if(!product) stockContainer.innerHTML = renderRow('M', 0);
-            
-            window.addStockGroup = () => stockContainer.insertAdjacentHTML('beforeend', renderRow());
-            
-            window.updateHiddenStock = () => {
-                const data = [];
-                stockContainer.querySelectorAll('.stock-size-group').forEach(g => {
-                    const s = g.querySelector('.size-input').value.trim();
-                    const q = parseInt(g.querySelector('.qty-input').value, 10);
-                    if(s && !isNaN(q)) data.push(`${s}:${q}`);
-                });
-                hiddenStockInput.value = data.join('|');
+            const updateStockInputs = () => {
+                const mapToRender = product ? product.stock : {};
+                stockContainer.innerHTML = Object.entries(mapToRender).map(([size, qty]) => createStockRow(size, qty)).join('');
+                if (Object.keys(mapToRender).length === 0 && !product) {
+                    stockContainer.innerHTML = createStockRow('M', 0);
+                }
+                updateHiddenStock();
             };
-
-            form.name.addEventListener('input', (e) => {
-                 if (!form.dataset.productId || !form.slug.value) form.slug.value = generateSlugFromName(e.target.value);
-            });
-            stockContainer.oninput = updateHiddenStock;
-            updateHiddenStock();
-        };
-
-        window.handleAddEditProduct = async (e) => {
-            e.preventDefault();
-            const form = e.target;
-            const pid = form.dataset.productId;
-            const name = form.name.value;
-            const slug = form.slug.value.trim() || generateSlugFromName(name);
             
-            const existing = Object.values(products).find(p => p.slug === slug && p.id !== pid);
-            if (existing) return showMessage("Error", "Slug already exists.", true);
-
-            const stock = {};
-            form.querySelector('[name="stockData"]').value.split('|').forEach(s => {
-                const [k,v] = s.split(':');
-                if(k) stock[k] = parseInt(v);
-            });
-
-            const data = {
-                name, slug, description: form.description.value,
-                price: parseFloat(form.price.value),
-                oldPrice: parseFloat(form.oldPrice.value) || null,
-                images: form.images.value.split('\n').map(s=>s.trim()).filter(s=>s),
-                stock
-            };
-
-            try {
-                const ref = getPublicCollectionRef('products');
-                if (pid) await updateDoc(doc(ref, pid), data);
-                else await setDoc(doc(ref), data);
-                showMessage("Success", "Saved successfully.");
-                form.reset(); setupAddEditForm(null);
-            } catch(err) { showMessage("Error", err.message, true); }
-        };
-        
-        window.editProduct = (id) => {
-            setupAddEditForm(products[id]);
-            switchAdminTab('products');
-        };
-        
-        window.deleteProduct = async (id) => {
-            if(!confirm("Delete this product?")) return;
-            try { await deleteDoc(doc(getPublicCollectionRef('products'), id)); } catch(e){}
-        };
-
-        // Admin Order Logic
-        window.renderAdminOrders = () => {
-            const container = document.getElementById('admin-order-list');
-            if (!container) return;
-            
-            container.innerHTML = allOrders.map(o => `
-                <div class="p-4 border rounded-xl bg-white shadow-sm text-sm">
-                    <div class="flex justify-between mb-2">
-                        <span class="font-bold text-brand-600">#${o.orderId}</span>
-                        <span class="px-2 py-1 bg-gray-100 rounded text-xs font-bold">${o.status}</span>
+            function createStockRow(size = '', qty = 0) {
+                return `
+                    <div class="stock-size-group flex gap-2 mb-2">
+                        <input type="text" placeholder="Size" value="${size}" class="size-input p-2 bg-gray-50 border border-gray-200 rounded-lg w-1/3 focus:bg-white focus:ring-1 focus:ring-primary outline-none">
+                        <input type="number" placeholder="Qty" value="${qty}" min="0" class="qty-input p-2 bg-gray-50 border border-gray-200 rounded-lg w-1/3 focus:bg-white focus:ring-1 focus:ring-primary outline-none">
+                        <button type="button" onclick="this.parentElement.remove(); updateHiddenStock()" class="p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 w-1/3 transition">Remove</button>
                     </div>
-                    <p><b>${o.customerName}</b> (${o.phone})</p>
-                    <p class="text-gray-500 truncate">${o.address}</p>
-                    <p class="mt-1"><b>Total: ৳${o.totalAmount}</b> (Trx: <span class="font-mono text-red-500">${o.transactionId}</span>)</p>
-                    
-                    <div class="mt-3 flex gap-2">
-                        <select onchange="updateOrderStatus('${o.id}', this.value)" class="border rounded p-1 text-xs">
-                            ${ORDER_STATUSES.map(s => `<option value="${s}" ${s===o.status?'selected':''}>${s}</option>`).join('')}
-                        </select>
-                        <button onclick="deleteOrder('${o.id}')" class="text-red-500"><i class="ph ph-trash"></i></button>
-                    </div>
-                </div>
-            `).join('');
-        };
-        
-        window.updateOrderStatus = async (id, st) => {
-            await updateDoc(doc(getPublicCollectionRef('orders'), id), { status: st });
-            showMessage("Updated", "Order status updated.");
-        };
-        window.deleteOrder = async (id) => {
-            if(confirm("Delete order?")) await deleteDoc(doc(getPublicCollectionRef('orders'), id));
-        };
-
-        // --- Tracking Logic ---
-        window.handleTrackOrder = async (e) => {
-            e.preventDefault();
-            const qVal = document.getElementById('track-query').value.trim();
-            const resDiv = document.getElementById('track-result');
-            resDiv.innerHTML = '<div class="text-center py-4"><div class="animate-spin w-6 h-6 border-2 border-brand-500 border-t-transparent rounded-full mx-auto"></div></div>';
-
-            const ref = getPublicCollectionRef('orders');
-            const q = qVal.toUpperCase().startsWith('TJ') ? query(ref, where('orderId', '==', qVal.toUpperCase())) : query(ref, where('phone', '==', qVal));
-            
-            const snap = await getDocs(q);
-            if(snap.empty) return resDiv.innerHTML = '<p class="text-center text-red-500 font-medium">Order not found.</p>';
-            
-            const order = snap.docs[0].data();
-            const steps = ['Confirmed', 'In Transit', 'Out for delivery', 'Delivered'];
-            const currentIdx = steps.indexOf(order.status) > -1 ? steps.indexOf(order.status) : (order.status === 'Cancelled' ? -1 : 0);
-            
-            let statusHtml = '';
-            if (order.status === 'Cancelled') {
-                statusHtml = `<div class="p-4 bg-red-50 text-red-700 rounded-xl font-bold text-center">Order Cancelled</div>`;
-            } else {
-                statusHtml = `
-                    <div class="flex justify-between items-center relative mt-8 mb-4">
-                        <div class="absolute top-1/2 left-0 w-full h-1 bg-gray-200 -z-10"></div>
-                        <div class="absolute top-1/2 left-0 h-1 bg-green-500 transition-all duration-500 -z-10" style="width: ${(currentIdx / (steps.length - 1)) * 100}%"></div>
-                        
-                        ${steps.map((step, i) => `
-                            <div class="flex flex-col items-center">
-                                <div class="w-8 h-8 rounded-full flex items-center justify-center border-2 ${i <= currentIdx ? 'bg-green-500 border-green-500 text-white' : 'bg-white border-gray-300 text-gray-300'} transition-all z-10">
-                                    ${i <= currentIdx ? '<i class="ph ph-check text-sm"></i>' : '<i class="ph ph-circle"></i>'}
-                                </div>
-                                <span class="text-xs mt-2 font-medium ${i <= currentIdx ? 'text-gray-800' : 'text-gray-400'} hidden md:block">${step}</span>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <p class="text-center font-bold text-brand-600 text-lg mt-4">${order.status}</p>
                 `;
             }
+            
+            window.addStockGroup = () => {
+                stockContainer.insertAdjacentHTML('beforeend', createStockRow('', 0));
+            };
 
-            resDiv.innerHTML = `
-                <div class="bg-white p-6 rounded-xl border border-gray-100 shadow-sm animate-fade-in">
-                    <div class="flex justify-between items-start mb-4">
-                        <div>
-                            <p class="text-sm text-gray-500">Order ID</p>
-                            <p class="font-bold text-xl">${order.orderId}</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-sm text-gray-500">Amount</p>
-                            <p class="font-bold text-brand-600">৳${order.totalAmount}</p>
-                        </div>
-                    </div>
-                    ${statusHtml}
-                </div>
-            `;
+            window.updateHiddenStock = () => {
+                let stockData = [];
+                document.querySelectorAll('.stock-size-group').forEach(group => {
+                    const size = group.querySelector('.size-input').value.trim();
+                    const qty = parseInt(group.querySelector('.qty-input').value, 10);
+                    if (size && !isNaN(qty)) stockData.push(`${size}:${qty}`);
+                });
+                hiddenStockInput.value = stockData.join('|');
+            };
+            
+            form.name.addEventListener('input', (e) => {
+                 if (!form.dataset.productId || !form.slug.value) {
+                     form.slug.value = generateSlugFromName(e.target.value);
+                 }
+            });
+
+            stockContainer.oninput = updateHiddenStock;
+            updateStockInputs(); 
         };
 
-        window.switchAdminTab = (tab) => {
-            document.querySelectorAll('.admin-tab-content').forEach(e => e.classList.add('view-hidden'));
-            document.getElementById(`admin-tab-content-${tab}`).classList.remove('view-hidden');
-            document.querySelectorAll('.tab-btn').forEach(b => b.className = "tab-btn px-4 py-2 text-gray-500 hover:text-gray-900 font-medium transition");
-            document.getElementById(`btn-${tab}`).className = "tab-btn px-4 py-2 text-brand-600 border-b-2 border-brand-600 font-bold transition";
+        window.handleAddEditProduct = async (event) => {
+            event.preventDefault();
+            const form = event.target;
+            const productId = form.dataset.productId;
+            const btn = form.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+
+            const name = form.name.value;
+            const slug = form.slug.value.trim() || generateSlugFromName(name); 
+            const description = form.description.value;
+            const price = parseFloat(form.price.value); 
+            const oldPriceValue = form.oldPrice.value;
+            const oldPrice = oldPriceValue ? parseFloat(oldPriceValue) : null; 
+            const images = form.images.value.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+
+            if (oldPrice && oldPrice <= price) {
+                showMessage("Validation Error", "Original Price must be higher than Discounted Price.", true);
+                return;
+            }
+            
+            const existingProduct = Object.values(products).find(p => p.slug === slug && p.id !== productId);
+            if (existingProduct) {
+                 showMessage("Validation Error", `Slug "${slug}" is taken.`, true);
+                 return;
+            }
+
+            const stockArray = form.querySelector('[name="stockData"]').value.split('|').filter(s => s);
+            const stockMap = {};
+            stockArray.forEach(item => {
+                const [size, qty] = item.split(':');
+                if (size && !isNaN(parseInt(qty, 10))) stockMap[size.trim()] = parseInt(qty, 10);
+            });
+
+            const productData = { name, slug, description, price, oldPrice, images, stock: stockMap };
+            const productsRef = getPublicCollectionRef('products');
+            
+            btn.disabled = true;
+            btn.textContent = "Saving...";
+
+            try {
+                if (productId) {
+                    await updateDoc(doc(productsRef, productId), productData);
+                } else {
+                    await setDoc(doc(productsRef), productData);
+                }
+                showMessage("Success", `Product "${name}" saved!`);
+                form.reset();
+                setupAddEditForm(null); 
+            } catch (error) {
+                console.error("Product Save Error:", error);
+                showMessage("Error", "Failed to save product.", true);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        };
+
+        window.editProduct = (productId) => {
+            setupAddEditForm(products[productId]);
+            switchAdminTab('products');
+        };
+
+        window.deleteProduct = async (productId) => {
+            if(!confirm('Delete this product forever?')) return;
+            try {
+                const productsRef = getPublicCollectionRef('products');
+                await deleteDoc(doc(productsRef, productId));
+                showMessage("Success", "Product deleted.");
+            } catch (error) {
+                showMessage("Error", "Failed to delete product.", true);
+            }
         };
 
         initFirebase();
+        
     </script>
 
-    <header class="glass-nav sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 lg:px-8 h-20 flex justify-between items-center">
-            
-            <a href="#home" class="flex items-center gap-3 group">
-                <div class="w-10 h-10 bg-brand-500 text-white flex items-center justify-center rounded-lg shadow-lg shadow-brand-500/20 group-hover:rotate-3 transition transform">
-                    <span class="font-extrabold text-xl">T</span>
-                </div>
-                <div class="flex flex-col">
-                    <span class="font-bold text-xl leading-none text-gray-900 tracking-tight">TRENDY</span>
-                    <span class="text-xs font-medium text-gray-500 tracking-widest group-hover:text-brand-600 transition">JAMAKAPOR</span>
-                </div>
-            </a>
-
-            <nav class="hidden md:flex items-center gap-8">
-                <a href="#home" class="text-sm font-medium text-gray-600 hover:text-brand-600 transition">Shop</a>
-                <a href="#track" class="text-sm font-medium text-gray-600 hover:text-brand-600 transition">Track Order</a>
-                <a href="tel:+8801401603157" class="text-sm font-medium text-gray-600 hover:text-brand-600 transition flex items-center gap-2">
-                    <i class="ph ph-phone"></i> +8801401603157
-                </a>
-            </nav>
-
-            <button onclick="window.location.hash='#checkout'" class="relative p-3 rounded-full hover:bg-gray-100 transition group">
-                <i class="ph ph-shopping-cart text-2xl text-gray-700 group-hover:text-brand-600"></i>
-                <span id="cart-count" class="absolute top-1 right-1 w-5 h-5 bg-brand-600 text-white text-[10px] font-bold flex items-center justify-center rounded-full transform scale-0 transition-transform duration-300 border-2 border-white">0</span>
-            </button>
-        </div>
-    </header>
-
-    <main class="min-h-[80vh] pb-20">
-
-        <div id="home-view" class="app-view animate-fade-in">
-            
-            <section class="relative bg-brand-900 text-white overflow-hidden mb-12">
-                <div class="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-                <div class="max-w-7xl mx-auto px-4 py-16 md:py-24 relative z-10 flex flex-col items-center text-center">
-                    <span class="bg-brand-800 text-brand-100 px-4 py-1 rounded-full text-xs font-bold tracking-wider uppercase mb-4">New Collection 2025</span>
-                    <h1 class="text-5xl md:text-7xl font-black tracking-tight mb-6 leading-none">
-                        Redefine <br class="md:hidden" /> Your Style
-                    </h1>
-                    <p class="text-lg text-brand-100 max-w-lg mb-8 font-light">
-                        Discover the latest trends in men's fashion. Premium quality, unbeatable prices, and fast delivery across Bangladesh.
-                    </p>
-                    
-                    <div class="w-full max-w-md relative">
-                        <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg"></i>
-                        <input type="text" id="product-search" oninput="handleSearch(this.value)" 
-                               placeholder="Search t-shirts, panjabis..." 
-                               class="w-full pl-12 pr-4 py-4 rounded-2xl text-gray-900 shadow-2xl focus:ring-4 focus:ring-brand-500/30 border-none">
-                    </div>
-                </div>
-            </section>
-
-            <div class="max-w-7xl mx-auto px-4">
-                <div class="flex justify-between items-end mb-8">
-                    <h2 class="text-2xl font-bold text-gray-900">Latest Arrivals</h2>
-                    <div class="h-1 w-20 bg-brand-500 rounded-full"></div>
-                </div>
-
-                <div id="product-list" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-10">
-                    <div class="col-span-full py-20 text-center">
-                        <div class="animate-spin w-10 h-10 border-4 border-brand-200 border-t-brand-600 rounded-full mx-auto mb-4"></div>
-                        <p class="text-gray-400">Loading exclusive collection...</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="product-view" class="app-view view-hidden pt-8 px-4">
-            </div>
-
-        <div id="checkout-view" class="app-view view-hidden pt-8 px-4">
-            </div>
-
-        <div id="track-view" class="app-view view-hidden pt-16 px-4">
-            <div class="max-w-md mx-auto">
-                <div class="text-center mb-8">
-                    <div class="w-16 h-16 bg-brand-50 text-brand-600 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl">
-                        <i class="ph ph-package"></i>
-                    </div>
-                    <h1 class="text-3xl font-bold text-gray-900">Track Order</h1>
-                    <p class="text-gray-500 mt-2">Enter your Order ID or Phone Number</p>
-                </div>
-                
-                <form onsubmit="handleTrackOrder(event)" class="relative">
-                    <input type="text" id="track-query" required placeholder="TJ..." 
-                           class="w-full p-4 pr-12 border border-gray-200 rounded-2xl focus:border-brand-500 shadow-sm">
-                    <button type="submit" class="absolute right-2 top-2 bottom-2 px-4 bg-brand-600 text-white rounded-xl font-bold hover:bg-brand-700 transition">
-                        <i class="ph ph-arrow-right"></i>
-                    </button>
-                </form>
-                
-                <div id="track-result" class="mt-8"></div>
-            </div>
-        </div>
-
-        <div id="admin-view" class="app-view view-hidden pt-8 px-4">
-            
-            <div id="admin-login-form" class="max-w-sm mx-auto mt-20 bg-white p-8 rounded-3xl shadow-xl border border-gray-100 text-center">
-                <div class="w-12 h-12 bg-gray-900 text-white rounded-xl flex items-center justify-center mx-auto mb-6 text-2xl"><i class="ph ph-lock-key"></i></div>
-                <h2 class="text-2xl font-bold mb-6">Admin Access</h2>
-                <form onsubmit="event.preventDefault(); handleAdminLogin()" class="space-y-4">
-                    <input type="email" id="admin-email" required placeholder="Email" class="w-full p-3 rounded-xl border border-gray-200 bg-gray-50">
-                    <input type="password" id="admin-password" required placeholder="Password" class="w-full p-3 rounded-xl border border-gray-200 bg-gray-50">
-                    <button type="submit" class="w-full py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition">Sign In</button>
-                </form>
-            </div>
-
-            <div id="admin-content" class="max-w-7xl mx-auto view-hidden">
-                <div class="flex justify-between items-center mb-8 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 bg-green-100 text-green-600 rounded-full flex items-center justify-center font-bold">A</div>
-                        <div>
-                            <p class="text-sm text-gray-500">Admin</p>
-                            <p class="font-bold text-gray-900" id="admin-email-field"></p>
-                        </div>
-                    </div>
-                    <button onclick="handleAdminLogout()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg font-medium text-sm">Logout</button>
-                </div>
-                
-                <div class="grid lg:grid-cols-12 gap-8">
-                    <div class="lg:col-span-3">
-                        <div class="bg-white p-4 rounded-2xl border border-gray-100 sticky top-24 flex flex-col gap-2">
-                            <button id="btn-products" onclick="switchAdminTab('products')" class="tab-btn px-4 py-2 text-left text-brand-600 border-b-2 border-brand-600 font-bold transition">Products</button>
-                            <button id="btn-orders" onclick="switchAdminTab('orders')" class="tab-btn px-4 py-2 text-left text-gray-500 hover:text-gray-900 font-medium transition">Orders</button>
-                        </div>
-                    </div>
-
-                    <div class="lg:col-span-9">
-                        <div id="admin-tab-content-products" class="admin-tab-content space-y-8">
-                            <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                                <h3 class="text-xl font-bold mb-4" id="form-title">Add Product</h3>
-                                <form id="add-edit-product-form" onsubmit="handleAddEditProduct(event)" class="space-y-4">
-                                    <input type="hidden" name="stockData" value="">
-                                    <div class="grid md:grid-cols-2 gap-4">
-                                        <input type="text" name="name" placeholder="Product Name" required class="p-3 border rounded-xl">
-                                        <div class="flex">
-                                            <span class="p-3 bg-gray-50 border border-r-0 rounded-l-xl text-gray-400 text-sm">/product/</span>
-                                            <input type="text" name="slug" id="slug" placeholder="slug-url" class="p-3 border rounded-r-xl flex-grow font-mono text-sm">
-                                        </div>
-                                    </div>
-                                    <div class="grid md:grid-cols-2 gap-4">
-                                        <input type="number" name="price" placeholder="Price (BDT)" required class="p-3 border rounded-xl">
-                                        <input type="number" name="oldPrice" placeholder="Old Price (Optional)" class="p-3 border rounded-xl">
-                                    </div>
-                                    <textarea name="description" rows="3" placeholder="Description" required class="w-full p-3 border rounded-xl"></textarea>
-                                    <textarea name="images" rows="3" placeholder="Image URLs (one per line)" required class="w-full p-3 border rounded-xl font-mono text-xs"></textarea>
-                                    
-                                    <div class="bg-gray-50 p-4 rounded-xl">
-                                        <label class="block text-sm font-bold mb-2">Stock Variants</label>
-                                        <div id="stock-size-container"></div>
-                                        <button type="button" onclick="addStockGroup()" class="mt-2 text-sm text-brand-600 font-bold hover:underline">+ Add Variant</button>
-                                    </div>
-
-                                    <div class="flex gap-4">
-                                        <button type="submit" class="flex-grow py-3 bg-brand-600 text-white rounded-xl font-bold hover:bg-brand-700">Save Product</button>
-                                        <button type="button" onclick="setupAddEditForm(null)" class="px-6 py-3 bg-gray-200 text-gray-600 rounded-xl font-bold">Clear</button>
-                                    </div>
-                                </form>
-                            </div>
-                            
-                            <div id="admin-product-list" class="space-y-4"></div>
-                        </div>
-
-                        <div id="admin-tab-content-orders" class="admin-tab-content view-hidden space-y-4">
-                            <h3 class="text-xl font-bold">All Orders</h3>
-                            <div id="admin-order-list" class="space-y-4"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </main>
-
-    <footer class="bg-white border-t border-gray-100 pt-16 pb-8">
-        <div class="max-w-7xl mx-auto px-4 grid md:grid-cols-3 gap-12 mb-12">
-            <div>
-                <div class="flex items-center gap-2 mb-4">
-                    <div class="w-8 h-8 bg-brand-500 text-white flex items-center justify-center rounded font-bold">T</div>
-                    <span class="font-bold text-lg">TRENDY</span>
-                </div>
-                <p class="text-gray-500 text-sm leading-relaxed">
-                    Bringing you the finest collection of men's fashion. Style, comfort, and affordability in one place.
-                </p>
-            </div>
-            <div>
-                <h4 class="font-bold text-gray-900 mb-4">Quick Links</h4>
-                <ul class="space-y-2 text-sm text-gray-500">
-                    <li><a href="#home" class="hover:text-brand-600">New Arrivals</a></li>
-                    <li><a href="#track" class="hover:text-brand-600">Track My Order</a></li>
-                    <li><a href="#admin" class="hover:text-brand-600">Admin Login</a></li>
-                </ul>
-            </div>
-            <div>
-                <h4 class="font-bold text-gray-900 mb-4">Contact Us</h4>
-                <ul class="space-y-3 text-sm text-gray-500">
-                    <li class="flex items-center gap-2"><i class="ph ph-phone text-brand-600"></i> +8801401603157</li>
-                    <li class="flex items-center gap-2"><i class="ph ph-envelope text-brand-600"></i> rabby420bd@gmail.com</li>
-                    <li class="flex items-center gap-2"><i class="ph ph-facebook-logo text-brand-600"></i> @TrendyJamakapor</li>
-                </ul>
-            </div>
-        </div>
-        <div class="text-center pt-8 border-t border-gray-50 text-sm text-gray-400">
-            &copy; 2025 Trendy Jamakapor. All rights reserved.
-        </div>
-    </footer>
-
-    <div id="message-modal" class="hidden fixed inset-0 z-[60] backdrop-blur-sm bg-gray-900/20 items-center justify-center p-4 opacity-0 transition-opacity duration-200" onclick="if(event.target === this) this.classList.add('hidden')">
-        <div class="bg-white rounded-3xl shadow-2xl max-w-xs w-full overflow-hidden transform transition-all scale-100">
+    <!-- Modal/Message Box Structure -->
+    <div id="message-modal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] animate-fade-in">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full mx-4 overflow-hidden transform scale-100 transition-transform">
             <div class="p-6 text-center">
                 <div id="modal-icon-container" class="mb-4 flex justify-center"></div>
                 <h3 id="modal-title" class="text-xl font-bold text-gray-900 mb-2"></h3>
-                <p id="modal-message" class="text-gray-500 text-sm mb-6"></p>
-                <button id="modal-btn" onclick="document.getElementById('message-modal').classList.add('hidden')">Okay</button>
+                <div id="modal-message" class="text-gray-600 mb-6 text-sm"></div>
+                <button onclick="document.getElementById('message-modal').classList.add('hidden')" class="w-full py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition">Okay</button>
             </div>
         </div>
     </div>
 
-    <script>
-        // Fade in Modal Logic
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                if (mutation.target.classList.contains('hidden')) {
-                    mutation.target.classList.remove('opacity-100');
-                } else {
-                    setTimeout(() => mutation.target.classList.add('opacity-100'), 10);
-                }
-            });
-        });
-        observer.observe(document.getElementById('message-modal'), { attributes: true, attributeFilter: ['class'] });
-    </script>
+    <!-- HEADER/NAVBAR -->
+    <header class="fixed w-full top-0 z-50 glass transition-all duration-300" id="main-header">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                
+                <!-- Logo -->
+                <div onclick="window.location.hash='#home'" class="cursor-pointer group flex items-center gap-3">
+                    <div class="w-10 h-10 bg-primary text-white flex items-center justify-center font-serif font-bold text-2xl rounded-lg shadow-lg group-hover:rotate-3 transition-transform">T</div>
+                    <div class="flex flex-col">
+                        <span class="font-serif font-black text-xl tracking-widest text-gray-900 leading-none group-hover:text-primary transition-colors">TRENDY</span>
+                        <span class="text-[10px] tracking-[0.3em] text-gray-500 uppercase">Jamakapor</span>
+                    </div>
+                </div>
+
+                <!-- Desktop Nav -->
+                <nav class="hidden md:flex items-center space-x-8">
+                    <a href="#home" class="text-sm font-medium text-gray-700 hover:text-primary transition-colors uppercase tracking-wide">Shop</a>
+                    <a href="#track" class="text-sm font-medium text-gray-700 hover:text-primary transition-colors uppercase tracking-wide">Track Order</a>
+                    
+                    <button id="cart-button" onclick="window.location.hash='#checkout'"
+                            class="relative p-2 text-gray-700 hover:text-primary transition-colors group">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                        </svg>
+                        <!-- Cart Count Badge inserted by JS -->
+                    </button>
+                </nav>
+
+                <!-- Mobile Menu Button -->
+                <div class="md:hidden flex items-center gap-4">
+                     <button id="mobile-cart-btn" onclick="window.location.hash='#checkout'" class="relative text-gray-700">
+                         <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                     </button>
+                     <!-- Simple Mobile Menu Toggle Logic (inline for simplicity in single file) -->
+                     <button onclick="document.getElementById('mobile-menu').classList.toggle('hidden')" class="text-gray-700 focus:outline-none">
+                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                     </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Menu Dropdown -->
+        <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-100 absolute w-full shadow-lg">
+            <div class="px-4 pt-2 pb-6 space-y-1">
+                <a href="#home" onclick="document.getElementById('mobile-menu').classList.add('hidden')" class="block px-3 py-4 text-base font-medium text-gray-900 border-b border-gray-50">Home</a>
+                <a href="#track" onclick="document.getElementById('mobile-menu').classList.add('hidden')" class="block px-3 py-4 text-base font-medium text-gray-900 border-b border-gray-50">Track Order</a>
+                <a href="#admin" onclick="document.getElementById('mobile-menu').classList.add('hidden')" class="block px-3 py-4 text-sm text-gray-500">Admin Login</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
+
+        <!-- 1. HOME VIEW -->
+        <div id="home-view" class="app-view">
+            <!-- Hero Section -->
+            <div class="relative rounded-3xl overflow-hidden bg-gray-900 mb-12 shadow-2xl animate-fade-in group">
+                <div class="absolute inset-0 opacity-60">
+                    <!-- Placeholder fashion banner -->
+                    <img src="https://images.unsplash.com/photo-1483985988355-763728e1935b?q=80&w=2070&auto=format&fit=crop" alt="Fashion Banner" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000">
+                </div>
+                <div class="relative z-10 px-8 py-20 md:py-32 flex flex-col items-center text-center">
+                    <h1 class="text-4xl md:text-6xl font-serif font-bold text-white mb-4 tracking-tight">Elevate Your Style</h1>
+                    <p class="text-gray-200 text-lg md:text-xl mb-8 max-w-xl">Discover the latest trends in men's fashion. Premium quality, curated for the modern gentleman.</p>
+                    <button onclick="document.getElementById('product-search').focus()" class="bg-white text-gray-900 px-8 py-3 rounded-full font-bold hover:bg-primary hover:text-white transition-colors shadow-lg transform hover:-translate-y-1">
+                        Shop Collection
+                    </button>
+                </div>
+            </div>
+
+            <!-- Search & Filter -->
+            <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+                <h2 class="text-2xl font-serif font-bold text-gray-900">New Arrivals</h2>
+                <div class="relative w-full md:w-96 group">
+                    <input type="text" id="product-search" oninput="handleSearch(this.value)" 
+                           placeholder="Search products..."
+                           class="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-full shadow-sm focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition group-hover:shadow-md">
+                    <svg class="absolute left-4 top-3.5 h-5 w-5 text-gray-400 group-hover:text-primary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                </div>
+            </div>
+
+            <div id="product-list" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                <div class="col-span-full flex justify-center py-12">
+                    <svg class="animate-spin h-8 w-8 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. PRODUCT DETAIL VIEW -->
+        <div id="product-view" class="app-view view-hidden"></div>
+
+        <!-- 3. CHECKOUT VIEW -->
+        <div id="checkout-view" class="app-view view-hidden"></div>
+
+        <!-- 4. ADMIN VIEW -->
+        <div id="admin-view" class="app-view view-hidden">
+            <div class="max-w-6xl mx-auto">
+                <!-- Admin Login Form -->
+                <div id="admin-login-form" class="max-w-md mx-auto bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
+                    <div class="text-center mb-8">
+                        <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                        </div>
+                        <h2 class="text-2xl font-bold text-gray-900">Admin Access</h2>
+                        <p class="text-sm text-gray-500">Enter your credentials to manage store.</p>
+                    </div>
+                    <form onsubmit="event.preventDefault(); handleAdminLogin()" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                            <input type="email" id="admin-email" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-primary outline-none transition">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                            <input type="password" id="admin-password" required class="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-primary outline-none transition">
+                        </div>
+                        <button type="submit" class="w-full py-3 bg-gray-900 text-white rounded-lg font-bold hover:bg-primary transition">Sign In</button>
+                    </form>
+                </div>
+
+                <!-- Admin Content -->
+                <div id="admin-content" class="view-hidden">
+                    <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+                        <div>
+                            <h1 class="text-3xl font-serif font-bold text-gray-900">Dashboard</h1>
+                            <p class="text-sm text-gray-500">Logged in as <span id="admin-email-field" class="font-bold text-gray-900"></span></p>
+                        </div>
+                        <button onclick="handleAdminLogout()" class="px-6 py-2 border border-gray-300 rounded-full text-gray-600 hover:bg-gray-50 transition text-sm font-medium">Sign Out</button>
+                    </div>
+                    
+                    <!-- Tabs -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
+                        <div class="flex border-b border-gray-200">
+                            <button id="admin-tab-products" onclick="switchAdminTab('products')" class="tab-button flex-1 py-4 text-sm font-bold text-primary border-b-2 border-primary bg-gray-50">
+                                Inventory
+                            </button>
+                            <button id="admin-tab-orders" onclick="switchAdminTab('orders')" class="tab-button flex-1 py-4 text-sm font-bold text-gray-500 hover:text-gray-700 transition">
+                                Orders
+                            </button>
+                        </div>
+
+                        <div class="p-6">
+                            <!-- Product Management Tab -->
+                            <div id="admin-tab-content-products" class="admin-tab-content">
+                                <div class="grid lg:grid-cols-12 gap-8">
+                                    <!-- Form -->
+                                    <div class="lg:col-span-5">
+                                        <div class="bg-gray-50 p-6 rounded-xl border border-gray-200 sticky top-24">
+                                            <h2 id="form-title" class="text-xl font-bold mb-4 text-gray-900">Add Product</h2>
+                                            <form id="add-edit-product-form" onsubmit="handleAddEditProduct(event)" class="space-y-4">
+                                                <input type="hidden" name="stockData" value="">
+                                                
+                                                <input type="text" name="name" required placeholder="Product Name" class="w-full p-3 border border-gray-200 rounded-lg focus:ring-1 focus:ring-primary outline-none">
+                                                
+                                                <div class="flex rounded-lg shadow-sm">
+                                                    <span class="inline-flex items-center px-3 rounded-l-lg border border-r-0 border-gray-200 bg-gray-100 text-gray-500 text-sm">/product/</span>
+                                                    <input type="text" name="slug" id="slug" required pattern="^[a-z0-9-]+$" class="flex-1 min-w-0 block w-full px-3 py-3 rounded-none rounded-r-lg border border-gray-200 focus:ring-1 focus:ring-primary outline-none text-sm" placeholder="slug-url">
+                                                </div>
+                                                
+                                                <div class="flex gap-4">
+                                                    <input type="number" name="price" required min="1" placeholder="Price (৳)" class="w-1/2 p-3 border border-gray-200 rounded-lg focus:ring-1 focus:ring-primary outline-none">
+                                                    <input type="number" name="oldPrice" min="1" placeholder="Old Price (Optional)" class="w-1/2 p-3 border border-gray-200 rounded-lg focus:ring-1 focus:ring-primary outline-none">
+                                                </div>
+                                                
+                                                <textarea name="description" rows="3" required placeholder="Product Description" class="w-full p-3 border border-gray-200 rounded-lg focus:ring-1 focus:ring-primary outline-none"></textarea>
+                                                <textarea name="images" rows="3" placeholder="Image URLs (One per line)" required class="w-full p-3 border border-gray-200 rounded-lg focus:ring-1 focus:ring-primary outline-none font-mono text-xs"></textarea>
+                                                
+                                                <div class="pt-2">
+                                                    <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Stock Variants</label>
+                                                    <div id="stock-size-container"></div>
+                                                    <button type="button" onclick="addStockGroup()" class="text-sm text-primary hover:underline mt-2">+ Add Variant</button>
+                                                </div>
+                                                
+                                                <div class="flex gap-3 pt-4">
+                                                    <button type="submit" class="flex-1 py-3 bg-gray-900 text-white rounded-lg font-bold hover:bg-primary transition">Save Product</button>
+                                                    <button type="button" onclick="setupAddEditForm(null)" class="px-4 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Clear</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- List -->
+                                    <div class="lg:col-span-7">
+                                        <div id="admin-product-list" class="space-y-3 max-h-[800px] overflow-y-auto custom-scrollbar">
+                                            <!-- List JS -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Order History Tab -->
+                            <div id="admin-tab-content-orders" class="admin-tab-content view-hidden">
+                                <div id="admin-order-list" class="space-y-4"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <script>
+                    function switchAdminTab(tabName) {
+                        document.querySelectorAll('.admin-tab-content').forEach(el => el.classList.add('view-hidden'));
+                        document.getElementById(`admin-tab-content-${tabName}`).classList.remove('view-hidden');
+                        document.querySelectorAll('.tab-button').forEach(btn => {
+                            btn.classList.remove('border-primary', 'text-primary', 'bg-gray-50');
+                            btn.classList.add('text-gray-500');
+                        });
+                        const activeBtn = document.getElementById(`admin-tab-${tabName}`);
+                        activeBtn.classList.add('border-primary', 'text-primary', 'bg-gray-50');
+                        activeBtn.classList.remove('text-gray-500');
+                    }
+                </script>
+            </div>
+        </div>
+        
+        <!-- 5. TRACK ORDER VIEW -->
+        <div id="track-view" class="app-view view-hidden">
+            <div class="max-w-md mx-auto mt-12">
+                <div class="bg-white p-8 rounded-2xl shadow-xl border border-gray-100 text-center">
+                    <h1 class="text-3xl font-serif font-bold text-gray-900 mb-2">Track Your Order</h1>
+                    <p class="text-gray-500 mb-8 text-sm">Enter your details below to see real-time updates.</p>
+                    
+                    <form onsubmit="event.preventDefault(); handleTrackOrder(event)" class="relative">
+                        <input type="text" id="track-query" required placeholder="Order ID (TJ...) or Phone" class="w-full p-4 pr-12 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition">
+                        <button type="submit" class="absolute right-2 top-2 p-2 bg-gray-900 text-white rounded-lg hover:bg-primary transition shadow-lg">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </button>
+                    </form>
+                </div>
+                
+                <div id="track-result" class="mt-6"></div>
+            </div>
+        </div>
+
+    </main>
+    
+    <!-- FOOTER -->
+    <footer class="bg-gray-900 text-white pt-16 pb-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
+                <div class="space-y-4">
+                    <h3 class="font-serif text-2xl font-bold tracking-wider">TRENDY<span class="font-sans text-sm font-light tracking-[0.3em] block text-gray-400 mt-1">JAMAKAPOR</span></h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">Redefining men's fashion in Bangladesh with premium quality and timeless designs.</p>
+                </div>
+                
+                <div>
+                    <h4 class="font-bold text-lg mb-4">Customer Care</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#track" class="hover:text-white transition">Track Order</a></li>
+                        <li><a href="#" class="hover:text-white transition">Shipping Policy</a></li>
+                        <li><a href="#" class="hover:text-white transition">Returns & Exchanges</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="font-bold text-lg mb-4">Contact Us</h4>
+                    <ul class="space-y-3 text-sm text-gray-400">
+                        <li class="flex items-center gap-3">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                            <a href="tel:+8801401603157" class="hover:text-white transition">+880 1401 603157</a>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                            <a href="mailto:rabby420bd@gmail.com" class="hover:text-white transition">rabby420bd@gmail.com</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+                <p class="text-xs text-gray-500">&copy; 2025 Trendy Jamakapor. All rights reserved.</p>
+                <p class="text-xs text-gray-600 flex items-center gap-1">
+                    Designed with <span class="text-red-500 text-base">❤</span> in Bangladesh
+                </p>
+            </div>
+        </div>
+    </footer>
+    
 </body>
 </html>
+
