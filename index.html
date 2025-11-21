@@ -106,7 +106,18 @@
         let isAuthReady = false;
         let products = {};
         let currentProduct = null;
+        
+        // Initialize cart from localStorage if available
         let currentCart = {}; 
+        try {
+            const savedCart = localStorage.getItem('trendy_cart');
+            if (savedCart) {
+                currentCart = JSON.parse(savedCart);
+            }
+        } catch (e) {
+            console.error("Error loading cart from storage", e);
+        }
+
         let allOrders = [];
 
         // --- Utility Functions ---
@@ -277,27 +288,46 @@
 
         // --- Cart Management ---
         
+        // Save cart helper
+        window.saveCart = () => {
+             localStorage.setItem('trendy_cart', JSON.stringify(currentCart));
+             updateCartCount();
+        };
+
         window.updateCartCount = () => {
             const count = Object.values(currentCart).reduce((sum, item) => sum + item.quantity, 0);
-            const cartButton = document.getElementById('cart-button');
-            let span = document.getElementById('cart-count');
             
-            // Ensure span exists
-            if (!span && cartButton) {
-                span = document.createElement('span');
-                span.id = 'cart-count';
-                span.className = 'absolute -top-1 -right-1 inline-flex items-center justify-center h-5 w-5 text-xs font-bold text-white bg-red-600 rounded-full ring-2 ring-white shadow-sm animate-pulse';
-                cartButton.appendChild(span);
-            } else if(span) {
-                span.className = 'absolute -top-1 -right-1 inline-flex items-center justify-center h-5 w-5 text-xs font-bold text-white bg-red-600 rounded-full ring-2 ring-white shadow-sm';
-                if(count > 0) span.classList.add('animate-bounce'); // bounce on update
-                setTimeout(() => span?.classList.remove('animate-bounce'), 1000);
-            }
+            // Helper function to update specific button badge
+            const updateBadge = (btnId, badgeId) => {
+                const btn = document.getElementById(btnId);
+                if (!btn) return;
 
-            if (span) {
-                span.textContent = count > 0 ? count : '';
-                span.classList.toggle('hidden', count === 0);
-            }
+                let badge = document.getElementById(badgeId);
+                
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.id = badgeId;
+                    badge.className = 'absolute -top-1 -right-1 inline-flex items-center justify-center h-5 w-5 text-xs font-bold text-white bg-red-600 rounded-full ring-2 ring-white shadow-sm animate-pulse';
+                    btn.appendChild(badge);
+                } else {
+                     badge.className = 'absolute -top-1 -right-1 inline-flex items-center justify-center h-5 w-5 text-xs font-bold text-white bg-red-600 rounded-full ring-2 ring-white shadow-sm';
+                     // Trigger animation reflow
+                     void badge.offsetWidth;
+                     if(count > 0) badge.classList.add('animate-bounce');
+                     setTimeout(() => badge?.classList.remove('animate-bounce'), 1000);
+                }
+
+                if (badge) {
+                    badge.textContent = count > 0 ? count : '';
+                    badge.classList.toggle('hidden', count === 0);
+                }
+            };
+
+            // Update Desktop Button
+            updateBadge('cart-button', 'cart-count-desktop');
+            
+            // Update Mobile Button
+            updateBadge('mobile-cart-btn', 'cart-count-mobile');
         };
 
         window.handleAddToCart = () => {
@@ -333,13 +363,13 @@
             };
 
             showMessage("Added to Cart", `<div class="flex flex-col items-center"><img src="${currentProduct.images?.[0]}" class="w-16 h-16 object-cover rounded-md mb-2"><span class="font-medium">${quantity} x ${currentProduct.name} (${selectedSize})</span></div>`, false);
-            updateCartCount();
+            saveCart(); // Saves and updates UI
         };
         
         window.handleRemoveFromCart = (key) => {
             if (currentCart[key]) {
                 delete currentCart[key];
-                updateCartCount();
+                saveCart(); // Saves and updates UI
                 renderCheckout(); 
             }
         };
@@ -758,7 +788,7 @@
                     false
                 );
                 currentCart = {}; 
-                updateCartCount(); 
+                saveCart(); 
                 window.location.hash='#home';
 
             } catch (error) {
