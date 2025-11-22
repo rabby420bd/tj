@@ -412,6 +412,42 @@
             showMessage("Added to Cart", `<div class="flex flex-col items-center"><img src="${currentProduct.images?.[0]}" class="w-16 h-16 object-cover rounded-md mb-2"><span class="font-medium">${quantity} x ${currentProduct.name} (${selectedSize})</span></div>`, false);
             saveCart(); // Saves and updates UI (triggering animations)
         };
+
+        window.handleBuyNow = () => {
+            const form = document.getElementById('product-purchase-form');
+            const selectedSize = form.querySelector('input[name="productSize"]:checked')?.value;
+            const quantity = parseInt(document.getElementById('quantity').value, 10);
+
+            if (!selectedSize || quantity <= 0) {
+                showMessage("Selection Required", "Please select a size and valid quantity.", true);
+                return;
+            }
+            if (currentProduct.stock[selectedSize] < quantity) {
+                showMessage("Stock Limitation", `Only ${currentProduct.stock[selectedSize]} units of this size are available.`, true);
+                return;
+            }
+
+            const key = `${currentProduct.id}_${selectedSize}`;
+            const existingItem = currentCart[key];
+
+            const newTotalQuantity = existingItem ? existingItem.quantity + quantity : quantity;
+            if (currentProduct.stock[selectedSize] < newTotalQuantity) {
+                showMessage("Stock Limitation", `You already have units in cart. Adding more exceeds available stock.`, true);
+                return;
+            }
+            
+            currentCart[key] = {
+                id: currentProduct.id,
+                name: currentProduct.name,
+                price: currentProduct.price, 
+                size: selectedSize,
+                quantity: newTotalQuantity,
+                image: currentProduct.images?.[0]
+            };
+
+            saveCart(); 
+            window.location.hash = '#checkout';
+        };
         
         window.handleRemoveFromCart = (key) => {
             if (currentCart[key]) {
@@ -590,7 +626,7 @@
                                         Add to Cart
                                     </button>
 
-                                    <button type="button" onclick="window.location.hash='#checkout'"
+                                    <button type="button" onclick="handleBuyNow()"
                                             class="w-full py-4 bg-primary text-white rounded-xl font-bold text-lg hover:bg-primary-dark transition shadow-lg transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed">
                                         Buy Now
                                     </button>
@@ -1852,5 +1888,4 @@
     
 </body>
 </html>
-
 
