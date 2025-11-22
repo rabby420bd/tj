@@ -70,6 +70,11 @@
             -webkit-backdrop-filter: blur(12px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.3);
         }
+        
+        /* Chat Bubble Styles */
+        .chat-bubble { position: relative; max-width: 80%; padding: 10px 14px; border-radius: 16px; font-size: 0.9rem; line-height: 1.4; }
+        .chat-bubble.mine { background-color: #8a3324; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+        .chat-bubble.theirs { background-color: #f3f4f6; color: #1f2937; align-self: flex-start; border-bottom-left-radius: 2px; }
     </style>
 </head>
 <body class="bg-gray-50 text-dark font-sans antialiased selection:bg-primary selection:text-white flex flex-col min-h-screen">
@@ -77,8 +82,8 @@
     <!-- Firebase SDK Imports and Initialization -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithEmailAndPassword, signOut, onAuthStateChanged, setPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, onSnapshot, collection, query, where, getDocs, updateDoc, deleteDoc, serverTimestamp, runTransaction } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot, collection, query, where, getDocs, updateDoc, deleteDoc, serverTimestamp, runTransaction, addDoc } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-firestore.js";
         import { setLogLevel } from "https://www.gstatic.com/firebasejs/10.5.0/firebase-app.js";
         
         // setLogLevel('Debug'); // Uncomment for debugging
@@ -116,6 +121,9 @@
         let isAuthReady = false;
         let products = {};
         let currentProduct = null;
+        let allChats = []; // Store all raw chat messages
+        let adminSelectedCustomer = null; // Track which customer the admin is viewing
+        let chatName = localStorage.getItem('trendy_chat_name') || ''; // Load stored name
         
         // Initialize cart from localStorage if available
         let currentCart = {}; 
@@ -237,8 +245,6 @@
                 db = getFirestore(app);
                 auth = getAuth(app);
                 
-                await setPersistence(auth, browserSessionPersistence);
-
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
                         userId = user.uid;
@@ -270,6 +276,7 @@
         const getPublicCollectionRef = (name) => collection(db, 'artifacts', appId, 'public', 'data', name);
 
         const setupPublicDataListeners = () => {
+            // 1. Products Listener
             const productsQuery = query(getPublicCollectionRef('products'));
             onSnapshot(productsQuery, (snapshot) => {
                 products = {};
@@ -285,6 +292,7 @@
                 }
             }, (error) => console.error("Error fetching products:", error));
 
+            // 2. Orders Listener
             const ordersQuery = query(getPublicCollectionRef('orders'));
             onSnapshot(ordersQuery, (snapshot) => {
                 allOrders = [];
@@ -294,6 +302,27 @@
                 allOrders.sort((a, b) => (b.timestamp?.seconds || 0) - (a.timestamp?.seconds || 0));
                 renderAdminOrders(); 
             }, (error) => console.error("Error fetching orders:", error));
+
+            // 3. Chat Listener (New)
+            const chatsQuery = query(getPublicCollectionRef('chats'));
+            onSnapshot(chatsQuery, (snapshot) => {
+                allChats = [];
+                snapshot.forEach(doc => {
+                    allChats.push({ id: doc.id, ...doc.data() });
+                });
+                // Sort by timestamp ascending for correct display
+                allChats.sort((a, b) => (a.timestamp?.seconds || 0) - (b.timestamp?.seconds || 0));
+                
+                // Update relevant UI
+                if (auth.currentUser?.email === ADMIN_EMAIL) {
+                    renderAdminChatList();
+                    if (adminSelectedCustomer) {
+                        renderAdminChatMessages(adminSelectedCustomer);
+                    }
+                } else {
+                    renderCustomerChat();
+                }
+            }, (error) => console.error("Error fetching chats:", error));
         };
 
         // --- Cart Management ---
@@ -857,6 +886,7 @@
 
             if (isAdmin) {
                 renderAdminProducts();
+                renderAdminChatList(); // Render chat list on load
                 document.getElementById('admin-email-field').textContent = auth.currentUser.email;
             }
             showView('admin-view');
@@ -1222,6 +1252,236 @@
                 showMessage("Error", "Failed to delete product.", true);
             }
         };
+        
+        // --- Chat Logic ---
+        
+        window.toggleCustomerChat = () => {
+            const chatWindow = document.getElementById('customer-chat-window');
+            const isHidden = chatWindow.classList.contains('hidden');
+            const nameScreen = document.getElementById('chat-name-screen');
+            const messageScreen = document.getElementById('chat-conversation-screen');
+            
+            if (isHidden) {
+                chatWindow.classList.remove('hidden');
+                chatWindow.classList.add('animate-fade-in');
+                
+                if(chatName) {
+                    nameScreen.classList.add('hidden');
+                    messageScreen.classList.remove('hidden');
+                    // Clear unread indicator on open
+                    document.getElementById('chat-unread-dot').classList.add('hidden');
+                    setTimeout(() => {
+                        const container = document.getElementById('customer-chat-messages');
+                        container.scrollTop = container.scrollHeight;
+                    }, 100);
+                } else {
+                    nameScreen.classList.remove('hidden');
+                    messageScreen.classList.add('hidden');
+                }
+                
+            } else {
+                chatWindow.classList.add('hidden');
+                chatWindow.classList.remove('animate-fade-in');
+            }
+        };
+
+        window.startChat = () => {
+            const nameInput = document.getElementById('chat-name-input');
+            const name = nameInput.value.trim();
+            if(!name) return;
+            
+            chatName = name;
+            localStorage.setItem('trendy_chat_name', name);
+            
+            document.getElementById('chat-name-screen').classList.add('hidden');
+            document.getElementById('chat-conversation-screen').classList.remove('hidden');
+            
+            // Trigger a refresh of the view
+            renderCustomerChat();
+        };
+
+        window.sendCustomerMessage = async () => {
+            const input = document.getElementById('customer-chat-input');
+            const text = input.value.trim();
+            if (!text || !userId) return;
+
+            try {
+                const chatsRef = getPublicCollectionRef('chats');
+                await addDoc(chatsRef, {
+                    customerId: userId,
+                    customerName: chatName,
+                    sender: 'customer',
+                    text: text,
+                    timestamp: serverTimestamp(),
+                    read: false
+                });
+                input.value = '';
+            } catch (error) {
+                console.error("Error sending message:", error);
+            }
+        };
+
+        window.renderCustomerChat = () => {
+            // Filter messages for current user
+            const myChats = allChats.filter(c => c.customerId === userId);
+            const container = document.getElementById('customer-chat-messages');
+            if (!container) return;
+
+            // Check if last message is from admin and window is closed -> Show dot
+            if (myChats.length > 0) {
+                const lastMsg = myChats[myChats.length - 1];
+                const chatWindow = document.getElementById('customer-chat-window');
+                if (lastMsg.sender === 'admin' && chatWindow.classList.contains('hidden')) {
+                    document.getElementById('chat-unread-dot').classList.remove('hidden');
+                }
+            }
+
+            container.innerHTML = myChats.map(msg => `
+                <div class="flex w-full ${msg.sender === 'customer' ? 'justify-end' : 'justify-start'} mb-2">
+                    <div class="chat-bubble ${msg.sender === 'customer' ? 'mine' : 'theirs'}">
+                        ${msg.text}
+                    </div>
+                </div>
+            `).join('');
+            
+            // Auto scroll to bottom
+            container.scrollTop = container.scrollHeight;
+        };
+
+        // --- Admin Chat Logic ---
+
+        window.renderAdminChatList = () => {
+            const container = document.getElementById('admin-chat-list');
+            if (!container) return;
+
+            // Group messages by customerId
+            const conversations = {};
+            allChats.forEach(msg => {
+                if (!conversations[msg.customerId]) {
+                    conversations[msg.customerId] = {
+                        customerId: msg.customerId,
+                        lastMessage: msg,
+                        messages: []
+                    };
+                }
+                conversations[msg.customerId].messages.push(msg);
+                // Update last message if this one is newer
+                if (msg.timestamp?.seconds > (conversations[msg.customerId].lastMessage.timestamp?.seconds || 0)) {
+                    conversations[msg.customerId].lastMessage = msg;
+                }
+            });
+
+            // Sort conversations by latest message
+            const sortedConvos = Object.values(conversations).sort((a, b) => 
+                (b.lastMessage.timestamp?.seconds || 0) - (a.lastMessage.timestamp?.seconds || 0)
+            );
+
+            if (sortedConvos.length === 0) {
+                container.innerHTML = '<p class="text-center text-gray-400 p-4">No messages yet.</p>';
+                return;
+            }
+
+            container.innerHTML = sortedConvos.map(convo => {
+                // Try to find customer name from messages first, then orders
+                const nameFromChat = convo.lastMessage.customerName || convo.messages.find(m => m.customerName)?.customerName;
+                const customerOrder = allOrders.find(o => o.customer_uid === convo.customerId);
+                const name = nameFromChat || (customerOrder ? customerOrder.customerName : 'Guest');
+                
+                const time = convo.lastMessage.timestamp?.toDate ? convo.lastMessage.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
+                const preview = convo.lastMessage.text.substring(0, 30) + (convo.lastMessage.text.length > 30 ? '...' : '');
+                const isActive = adminSelectedCustomer === convo.customerId ? 'bg-blue-50 border-l-4 border-primary' : 'hover:bg-gray-50';
+
+                return `
+                    <div onclick="selectAdminChat('${convo.customerId}')" class="p-4 border-b border-gray-100 cursor-pointer transition ${isActive}">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="font-bold text-gray-900 text-sm truncate">${name}</span>
+                            <span class="text-xs text-gray-400">${time}</span>
+                        </div>
+                        <p class="text-xs text-gray-600 truncate">${convo.lastMessage.sender === 'admin' ? 'You: ' : ''}${preview}</p>
+                    </div>
+                `;
+            }).join('');
+        };
+
+        window.selectAdminChat = (customerId) => {
+            adminSelectedCustomer = customerId;
+            renderAdminChatList(); // Refresh list highlights
+            renderAdminChatMessages(customerId);
+            
+            // Show chat panel on mobile (if implemented responsive logic for sidebar/main)
+            document.getElementById('admin-chat-detail').classList.remove('hidden');
+        };
+
+        window.renderAdminChatMessages = (customerId) => {
+            const container = document.getElementById('admin-chat-messages-container');
+            const headerContainer = document.getElementById('admin-chat-header');
+            
+            // Find customer name
+            const msgs = allChats.filter(c => c.customerId === customerId);
+            const nameFromChat = msgs.find(m => m.customerName)?.customerName;
+            const customerOrder = allOrders.find(o => o.customer_uid === customerId);
+            const displayName = nameFromChat || (customerOrder ? customerOrder.customerName : 'Guest Customer');
+
+            // Render Header with Delete Button
+            headerContainer.innerHTML = `
+                <h3 class="font-bold text-gray-900">${displayName}</h3>
+                <button onclick="deleteChatHistory('${customerId}')" class="text-red-500 hover:bg-red-50 p-2 rounded-lg transition" title="Delete Conversation">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                </button>
+            `;
+
+            container.innerHTML = msgs.map(msg => `
+                <div class="flex w-full ${msg.sender === 'admin' ? 'justify-end' : 'justify-start'} mb-2">
+                    <div class="chat-bubble ${msg.sender === 'admin' ? 'mine' : 'theirs'}">
+                        ${msg.text}
+                    </div>
+                </div>
+            `).join('');
+            
+            container.scrollTop = container.scrollHeight;
+        };
+
+        window.deleteChatHistory = async (customerId) => {
+            if(!confirm('Are you sure you want to delete this entire conversation? This cannot be undone.')) return;
+            
+            const chatsRef = getPublicCollectionRef('chats');
+            const q = query(chatsRef, where('customerId', '==', customerId));
+            
+            try {
+                const snapshot = await getDocs(q);
+                const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
+                await Promise.all(deletePromises);
+                
+                showMessage("Success", "Chat history deleted.");
+                adminSelectedCustomer = null;
+                document.getElementById('admin-chat-detail').classList.add('hidden'); 
+                renderAdminChatList(); 
+            } catch (error) {
+                console.error("Error deleting chat:", error);
+                showMessage("Error", "Failed to delete chat history.", true);
+            }
+        };
+
+        window.sendAdminReply = async () => {
+            if (!adminSelectedCustomer) return;
+            const input = document.getElementById('admin-chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            try {
+                const chatsRef = getPublicCollectionRef('chats');
+                await addDoc(chatsRef, {
+                    customerId: adminSelectedCustomer,
+                    sender: 'admin',
+                    text: text,
+                    timestamp: serverTimestamp(),
+                    read: false
+                });
+                input.value = '';
+            } catch (error) {
+                console.error("Error sending reply:", error);
+            }
+        };
 
         initFirebase();
         
@@ -1377,6 +1637,9 @@
                             <button id="admin-tab-orders" onclick="switchAdminTab('orders')" class="tab-button flex-1 py-4 text-sm font-bold text-gray-500 hover:text-gray-700 transition">
                                 Orders
                             </button>
+                            <button id="admin-tab-chat" onclick="switchAdminTab('chat')" class="tab-button flex-1 py-4 text-sm font-bold text-gray-500 hover:text-gray-700 transition">
+                                Support
+                            </button>
                         </div>
 
                         <div class="p-6">
@@ -1431,6 +1694,31 @@
                             <!-- Order History Tab -->
                             <div id="admin-tab-content-orders" class="admin-tab-content view-hidden">
                                 <div id="admin-order-list" class="space-y-4"></div>
+                            </div>
+
+                            <!-- Chat Support Tab -->
+                            <div id="admin-tab-content-chat" class="admin-tab-content view-hidden">
+                                <div class="grid grid-cols-1 md:grid-cols-12 gap-0 border border-gray-200 rounded-xl overflow-hidden h-[600px]">
+                                    <!-- Sidebar -->
+                                    <div class="md:col-span-4 border-r border-gray-200 bg-gray-50 overflow-y-auto" id="admin-chat-list">
+                                        <!-- Conversation items loaded here -->
+                                    </div>
+                                    <!-- Chat Window -->
+                                    <div class="md:col-span-8 flex flex-col bg-white hidden md:flex" id="admin-chat-detail">
+                                        <div id="admin-chat-header" class="p-4 border-b border-gray-100 flex justify-between items-center">
+                                            <h3 class="font-bold text-gray-900">Select a conversation</h3>
+                                        </div>
+                                        <div class="flex-1 overflow-y-auto p-4 bg-gray-50" id="admin-chat-messages-container">
+                                            <!-- Messages here -->
+                                        </div>
+                                        <div class="p-4 bg-white border-t border-gray-100">
+                                            <form onsubmit="event.preventDefault(); sendAdminReply()" class="flex gap-2">
+                                                <input type="text" id="admin-chat-input" placeholder="Type a reply..." class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none">
+                                                <button type="submit" class="bg-primary text-white px-6 py-3 rounded-lg font-bold hover:bg-primary-dark">Send</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1517,6 +1805,50 @@
             </div>
         </div>
     </footer>
+
+    <!-- Customer Chat Widget -->
+    <div class="fixed bottom-6 right-6 z-50">
+        <!-- Chat Window (Hidden by Default) -->
+        <div id="customer-chat-window" class="hidden bg-white w-80 h-96 rounded-2xl shadow-2xl border border-gray-200 flex flex-col mb-4 overflow-hidden origin-bottom-right transition-all duration-300">
+            <div class="bg-primary p-4 flex justify-between items-center text-white">
+                <h3 class="font-bold">Live Chat</h3>
+                <button onclick="toggleCustomerChat()" class="hover:bg-primary-dark rounded-full p-1 transition">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <!-- Name Input Screen -->
+            <div id="chat-name-screen" class="flex-1 p-6 flex flex-col justify-center items-center bg-gray-50">
+                <p class="text-gray-600 text-center mb-4 text-sm">Please enter your name to start chatting.</p>
+                <form onsubmit="event.preventDefault(); startChat()" class="w-full">
+                    <input type="text" id="chat-name-input" required placeholder="Your Name" class="w-full p-3 border border-gray-300 rounded-lg mb-3 text-sm focus:ring-1 focus:ring-primary outline-none">
+                    <button type="submit" class="w-full bg-primary text-white py-2.5 rounded-lg font-bold text-sm hover:bg-primary-dark transition">Start Chat</button>
+                </form>
+            </div>
+
+            <!-- Chat Conversation Screen -->
+            <div id="chat-conversation-screen" class="flex-1 flex flex-col hidden h-full overflow-hidden">
+                <div id="customer-chat-messages" class="flex-1 overflow-y-auto p-4 bg-gray-50 custom-scrollbar">
+                    <!-- Messages injected here -->
+                </div>
+                <div class="p-3 bg-white border-t border-gray-100">
+                    <form onsubmit="event.preventDefault(); sendCustomerMessage()" class="flex gap-2">
+                        <input type="text" id="customer-chat-input" placeholder="Message..." class="flex-1 p-2 border border-gray-300 rounded-lg text-sm focus:ring-1 focus:ring-primary outline-none">
+                        <button type="submit" class="bg-primary text-white p-2 rounded-lg hover:bg-primary-dark transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Button -->
+        <button onclick="toggleCustomerChat()" class="bg-primary text-white p-4 rounded-full shadow-lg hover:bg-primary-dark transition transform hover:scale-105 relative">
+            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path></svg>
+            <!-- Unread Badge -->
+            <span id="chat-unread-dot" class="hidden absolute top-0 right-0 w-4 h-4 bg-red-500 border-2 border-white rounded-full animate-ping"></span>
+        </button>
+    </div>
     
 </body>
 </html>
