@@ -23,6 +23,8 @@
                     animation: {
                         'fade-in': 'fadeIn 0.5s ease-out forwards',
                         'slide-up': 'slideUp 0.5s ease-out forwards',
+                        'wiggle': 'wiggle 0.5s ease-in-out',
+                        'scale-loop': 'scaleLoop 1.5s infinite ease-in-out', // New Infinite Animation
                     },
                     keyframes: {
                         fadeIn: {
@@ -32,6 +34,14 @@
                         slideUp: {
                             '0%': { opacity: '0', transform: 'translateY(20px)' },
                             '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        wiggle: {
+                            '0%, 100%': { transform: 'rotate(-8deg)' },
+                            '50%': { transform: 'rotate(8deg)' },
+                        },
+                        scaleLoop: {
+                            '0%, 100%': { transform: 'scale(1)' },
+                            '50%': { transform: 'scale(1.25)' }, // Pulses larger
                         }
                     }
                 }
@@ -297,29 +307,37 @@
         window.updateCartCount = () => {
             const count = Object.values(currentCart).reduce((sum, item) => sum + item.quantity, 0);
             
-            // Helper function to update specific button badge
+            // Helper function to update specific button badge and animate focus
             const updateBadge = (btnId, badgeId) => {
                 const btn = document.getElementById(btnId);
                 if (!btn) return;
+
+                // 1. FOCUS ANIMATION (Wiggle): Triggers on change/add
+                btn.classList.remove('animate-wiggle');
+                void btn.offsetWidth; // Trigger reflow
+                if (count > 0) {
+                    btn.classList.add('animate-wiggle');
+                    setTimeout(() => btn?.classList.remove('animate-wiggle'), 500);
+                }
 
                 let badge = document.getElementById(badgeId);
                 
                 if (!badge) {
                     badge = document.createElement('span');
                     badge.id = badgeId;
-                    badge.className = 'absolute -top-1 -right-1 inline-flex items-center justify-center h-5 w-5 text-xs font-bold text-white bg-red-600 rounded-full ring-2 ring-white shadow-sm animate-pulse';
+                    badge.className = 'absolute -top-2 -right-2 inline-flex items-center justify-center h-5 w-5 text-xs font-bold text-white bg-red-600 rounded-full ring-2 ring-white shadow-sm transition-all duration-300';
                     btn.appendChild(badge);
-                } else {
-                     badge.className = 'absolute -top-1 -right-1 inline-flex items-center justify-center h-5 w-5 text-xs font-bold text-white bg-red-600 rounded-full ring-2 ring-white shadow-sm';
-                     // Trigger animation reflow
-                     void badge.offsetWidth;
-                     if(count > 0) badge.classList.add('animate-bounce');
-                     setTimeout(() => badge?.classList.remove('animate-bounce'), 1000);
                 }
 
-                if (badge) {
-                    badge.textContent = count > 0 ? count : '';
-                    badge.classList.toggle('hidden', count === 0);
+                // 2. INFINITE ANIMATION: Loop pulsing if items exist
+                if (count > 0) {
+                    badge.classList.remove('hidden');
+                    badge.textContent = count;
+                    // Apply infinite animation class
+                    badge.classList.add('animate-scale-loop');
+                } else {
+                    badge.classList.add('hidden');
+                    badge.classList.remove('animate-scale-loop');
                 }
             };
 
@@ -363,7 +381,7 @@
             };
 
             showMessage("Added to Cart", `<div class="flex flex-col items-center"><img src="${currentProduct.images?.[0]}" class="w-16 h-16 object-cover rounded-md mb-2"><span class="font-medium">${quantity} x ${currentProduct.name} (${selectedSize})</span></div>`, false);
-            saveCart(); // Saves and updates UI
+            saveCart(); // Saves and updates UI (triggering animations)
         };
         
         window.handleRemoveFromCart = (key) => {
@@ -1473,4 +1491,5 @@
     
 </body>
 </html>
+
 
