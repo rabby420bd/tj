@@ -114,7 +114,10 @@
             'Delivered',
             'Cancelled'
         ];
+        
+        // Product Categories Configuration
         const PRODUCT_CATEGORIES = ['Winter', 'Shirt', 'T-Shirt'];
+        
         // ====================================================================================
 
 
@@ -472,7 +475,6 @@
 
             const filteredProducts = productsArray.filter(p => 
                 p.name.toLowerCase().includes(term) || 
-                (p.category || '').toLowerCase().includes(term) ||
                 p.description.toLowerCase().includes(term)
             );
             renderProducts(filteredProducts);
@@ -501,7 +503,6 @@
                     discountPercentage = ((1 - (p.price / p.oldPrice)) * 100).toFixed(0);
                 }
                 const discountBadge = isDiscounted ? `<span class="absolute top-3 left-3 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md z-10">-${discountPercentage}%</span>` : '';
-                const categoryBadge = p.category ? `<span class="absolute top-3 right-3 bg-white/90 backdrop-blur text-gray-800 text-xs font-bold px-2 py-1 rounded-md shadow-sm z-10 border border-gray-100">${p.category}</span>` : '';
                 
                 const productLink = `product/${p.slug || p.id}`;
 
@@ -509,7 +510,6 @@
                     <div class="group bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 animate-slide-up flex flex-col">
                         <div class="relative aspect-square overflow-hidden bg-gray-100 cursor-pointer" onclick="window.location.hash='#${productLink}'">
                             ${discountBadge}
-                            ${categoryBadge}
                             <img src="${p.images?.[0] || 'https://placehold.co/400x400/fce7f3/8a3324?text=No+Image'}"
                                  alt="${p.name}" class="w-full h-full object-cover transition duration-700 group-hover:scale-110">
                             
@@ -522,6 +522,7 @@
                         <div class="p-5 flex flex-col flex-grow">
                             <!-- REMOVED line-clamp-1 from the class list below to show full name -->
                             <h3 class="text-base font-semibold text-gray-800 mb-1 group-hover:text-primary transition-colors">${p.name}</h3>
+                            <p class="text-xs text-gray-500 mb-2">${p.category || 'Winter'}</p>
                             
                             <div class="flex items-baseline space-x-2 mt-auto">
                                 <span class="text-xl font-bold text-primary">৳${p.price.toLocaleString('en-US')}</span>
@@ -575,7 +576,6 @@
                     <nav class="flex mb-6 text-sm text-gray-500">
                         <a href="#home" class="hover:text-primary transition-colors">Home</a>
                         <span class="mx-2">/</span>
-                        ${p.category ? `<span class="text-gray-500 hover:text-gray-700">${p.category}</span><span class="mx-2">/</span>` : ''}
                         <span class="text-gray-900 font-medium truncate">${p.name}</span>
                     </nav>
 
@@ -598,7 +598,7 @@
                         <div class="p-6 md:p-10 flex flex-col h-full">
                             <div class="flex justify-between items-start">
                                 <h1 class="text-3xl md:text-4xl font-serif font-bold text-gray-900 mb-2 leading-tight">${p.name}</h1>
-                                ${p.category ? `<span class="bg-gray-100 text-gray-600 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">${p.category}</span>` : ''}
+                                <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">${p.category || 'Winter'}</span>
                             </div>
                             
                             <div class="flex items-center space-x-4 mb-8">
@@ -954,11 +954,11 @@
                              <img src="${p.images?.[0]}" class="w-12 h-12 rounded-md object-cover bg-gray-100">
                              <div>
                                 <h4 class="font-bold text-gray-900">${p.name}</h4>
-                                <div class="flex flex-col gap-1">
-                                    <p class="text-xs text-gray-500 font-mono truncate w-40">${p.slug || p.id}</p>
-                                    ${p.category ? `<span class="inline-block px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-[10px] font-bold uppercase tracking-wide w-fit">${p.category}</span>` : ''}
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full uppercase tracking-wide font-bold">${p.category || 'Winter'}</span>
+                                    <span class="text-xs text-gray-500 font-mono truncate w-32">${p.slug || p.id}</span>
                                 </div>
-                                <div class="flex gap-2 mt-1 text-sm text-gray-600">
+                                <div class="flex gap-2 text-sm text-gray-600">
                                     <span class="font-semibold text-primary">৳${p.price}</span>
                                     <span class="flex gap-1 flex-wrap">${stockSummary}</span>
                                 </div>
@@ -1178,13 +1178,19 @@
             if (product) {
                 form.name.value = product.name;
                 form.slug.value = product.slug || '';
-                form.category.value = product.category || 'Winter';
                 form.description.value = product.description;
                 form.price.value = product.price; 
                 form.oldPrice.value = product.oldPrice || ''; 
                 form.images.value = product.images?.join('\n') || '';
+                
+                // Set Category Value if exists
+                if (product.category) {
+                     form.category.value = product.category;
+                } else {
+                     form.category.value = 'Winter'; // Default fallback
+                }
             } else {
-                form.category.value = 'Winter'; // Default
+                form.category.value = 'Winter'; // Default for new product
             }
 
             const updateStockInputs = () => {
@@ -1239,9 +1245,9 @@
 
             const name = form.name.value;
             const slug = form.slug.value.trim() || generateSlugFromName(name); 
-            const category = form.category.value;
             const description = form.description.value;
             const price = parseFloat(form.price.value); 
+            const category = form.category.value; // Get Category Value
             const oldPriceValue = form.oldPrice.value;
             const oldPrice = oldPriceValue ? parseFloat(oldPriceValue) : null; 
             const images = form.images.value.split('\n').map(s => s.trim()).filter(s => s.length > 0);
@@ -1264,7 +1270,7 @@
                 if (size && !isNaN(parseInt(qty, 10))) stockMap[size.trim()] = parseInt(qty, 10);
             });
 
-            const productData = { name, slug, category, description, price, oldPrice, images, stock: stockMap };
+            const productData = { name, slug, description, price, category, oldPrice, images, stock: stockMap };
             const productsRef = getPublicCollectionRef('products');
             
             btn.disabled = true;
@@ -1708,7 +1714,7 @@
                                                 
                                                 <div>
                                                     <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Category</label>
-                                                    <select name="category" class="w-full p-3 border border-gray-200 rounded-lg focus:ring-1 focus:ring-primary outline-none bg-white">
+                                                    <select name="category" required class="w-full p-3 border border-gray-200 rounded-lg focus:ring-1 focus:ring-primary outline-none bg-white">
                                                         <option value="Winter">Winter</option>
                                                         <option value="Shirt">Shirt</option>
                                                         <option value="T-Shirt">T-Shirt</option>
